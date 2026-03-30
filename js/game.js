@@ -319,18 +319,25 @@ class Game {
         
         GENERATORS.forEach(gen => {
             const owned = this.generators[gen.id].owned;
-            let effectiveOwned = owned;
+            
+            // Calculate effective production rate
+            let effectiveProduction = 0;
+            let baseProduction = 0;
             let bonusText = '';
             
-            // Show effective count based on cascade
             if (gen.id === 'foam_generator') {
-                effectiveOwned = this.getEffectiveFoamGenerators();
-                const bonus = effectiveOwned - owned;
-                if (bonus > 0) bonusText = ` (+${bonus} from accelerators)`;
+                // Direct + cascade
+                effectiveProduction = this.getEffectiveFoamGenerators() * this.getGeneratorBaseProduction('foam_generator');
+                baseProduction = owned * this.getGeneratorBaseProduction('foam_generator');
+                const bonus = effectiveProduction - baseProduction;
+                if (bonus > 0) bonusText = ` (+${this.formatNumber(bonus)}/s from cascade)`;
             } else if (gen.id === 'particle_accelerator') {
-                effectiveOwned = this.getEffectiveParticleAccelerators();
-                const bonus = effectiveOwned - owned;
-                if (bonus > 0) bonusText = ` (+${bonus} from forges)`;
+                effectiveProduction = this.getEffectiveParticleAccelerators() * this.getGeneratorBaseProduction('particle_accelerator');
+                baseProduction = owned * this.getGeneratorBaseProduction('particle_accelerator');
+                const bonus = effectiveProduction - baseProduction;
+                if (bonus > 0) bonusText = ` (+${this.formatNumber(bonus)}/s from cascade)`;
+            } else {
+                effectiveProduction = owned * this.getGeneratorBaseProduction(gen.id);
             }
             
             const cost = this.getGeneratorCost(gen.id);
@@ -345,7 +352,7 @@ class Game {
                     <div class="generator-desc">${gen.description}</div>
                 </div>
                 <div class="generator-stats">
-                    <div class="generator-owned">Owned: ${effectiveOwned}${bonusText}</div>
+                    <div class="generator-owned">Owned: ${owned}${bonusText}</div>
                     <div class="generator-cost ${affordable ? 'affordable' : ''}">Cost: ${this.formatNumber(cost)} Quanta</div>
                 </div>
             `;
