@@ -2,7 +2,14 @@
 const LAYERS = [
     { id: 0, name: 'Quantum Foam', resource: 'quanta' },
     { id: 1, name: 'Particles', resource: 'particles' },
-    { id: 2, name: 'Atoms', resource: 'atoms' }
+    { id: 2, name: 'Atoms', resource: 'atoms' },
+    { id: 3, name: 'Molecules', resource: 'molecules' },
+    { id: 4, name: 'Cells', resource: 'cells' },
+    { id: 5, name: 'Organisms', resource: 'organisms' },
+    { id: 6, name: 'Civilizations', resource: 'civilizations' },
+    { id: 7, name: 'Galaxies', resource: 'galaxies' },
+    { id: 8, name: 'Universe', resource: 'universe' },
+    { id: 9, name: 'Beyond', resource: 'beyond' }
 ];
 
 const GENERATORS = [
@@ -35,13 +42,104 @@ const GENERATORS = [
         costMultiplier: 1.15,
         baseProduction: 1,
         produces: 'atoms'
+    },
+    {
+        id: 'molecular_assembler',
+        name: 'Molecular Assembler',
+        description: 'Combines atoms into molecules',
+        layer: 3,
+        baseCost: 1000,
+        costMultiplier: 1.15,
+        baseProduction: 1,
+        produces: 'molecules'
+    },
+    {
+        id: 'bio_reactor',
+        name: 'Bio-Reactor',
+        description: 'Cultivates cellular structures',
+        layer: 4,
+        baseCost: 5000,
+        costMultiplier: 1.15,
+        baseProduction: 1,
+        produces: 'cells'
+    },
+    {
+        id: 'evolution_chamber',
+        name: 'Evolution Chamber',
+        description: 'Accelerates evolutionary processes',
+        layer: 5,
+        baseCost: 25000,
+        costMultiplier: 1.15,
+        baseProduction: 1,
+        produces: 'organisms'
+    },
+    {
+        id: 'empire_engine',
+        name: 'Empire Engine',
+        description: 'Builds civilizations from organisms',
+        layer: 6,
+        baseCost: 150000,
+        costMultiplier: 1.15,
+        baseProduction: 1,
+        produces: 'civilizations'
+    },
+    {
+        id: 'star_forge',
+        name: 'Star Forge',
+        description: 'Creates galaxies of stars',
+        layer: 7,
+        baseCost: 1000000,
+        costMultiplier: 1.15,
+        baseProduction: 1,
+        produces: 'galaxies'
+    },
+    {
+        id: 'reality_condenser',
+        name: 'Reality Condenser',
+        description: 'Weaves universes from galaxies',
+        layer: 8,
+        baseCost: 10000000,
+        costMultiplier: 1.15,
+        baseProduction: 1,
+        produces: 'universe'
+    },
+    {
+        id: 'void_gateway',
+        name: 'Void Gateway',
+        description: 'Opens passages to the beyond',
+        layer: 9,
+        baseCost: 100000000,
+        costMultiplier: 1.15,
+        baseProduction: 1,
+        produces: 'beyond'
     }
 ];
 
+// Which generator does each layer cascade TO (produces lower tier)
+const CASCADE_FROM = {
+    foam_generator: null,           // Layer 0 - base
+    particle_accelerator: 'foam_generator',
+    atomic_forge: 'particle_accelerator',
+    molecular_assembler: 'atomic_forge',
+    bio_reactor: 'molecular_assembler',
+    evolution_chamber: 'bio_reactor',
+    empire_engine: 'evolution_chamber',
+    star_forge: 'empire_engine',
+    reality_condenser: 'star_forge',
+    void_gateway: 'reality_condenser'
+};
+
 class Game {
     constructor() {
-        this.resources = { quanta: 0, particles: 0, atoms: 0 };
-        this.owned = { foam_generator: 0, particle_accelerator: 0, atomic_forge: 0 };
+        this.resources = {
+            quanta: 0, particles: 0, atoms: 0, molecules: 0,
+            cells: 0, organisms: 0, civilizations: 0,
+            galaxies: 0, universe: 0, beyond: 0
+        };
+        
+        this.owned = {};
+        GENERATORS.forEach(g => this.owned[g.id] = 0);
+        
         this.totalQuantaProduced = 0;
         this.transcensions = 0;
         this.quantumEssence = 0;
@@ -57,7 +155,6 @@ class Game {
     }
     
     init() {
-        // Get DOM elements
         this.elements = {
             quanta: document.getElementById('quanta'),
             quantaRate: document.getElementById('quanta-rate'),
@@ -65,6 +162,20 @@ class Game {
             particlesRate: document.getElementById('particles-rate'),
             atoms: document.getElementById('atoms'),
             atomsRate: document.getElementById('atoms-rate'),
+            molecules: document.getElementById('molecules'),
+            moleculesRate: document.getElementById('molecules-rate'),
+            cells: document.getElementById('cells'),
+            cellsRate: document.getElementById('cells-rate'),
+            organisms: document.getElementById('organisms'),
+            organismsRate: document.getElementById('organisms-rate'),
+            civilizations: document.getElementById('civilizations'),
+            civilizationsRate: document.getElementById('civilizations-rate'),
+            galaxies: document.getElementById('galaxies'),
+            galaxiesRate: document.getElementById('galaxies-rate'),
+            universe: document.getElementById('universe'),
+            universeRate: document.getElementById('universe-rate'),
+            beyond: document.getElementById('beyond'),
+            beyondRate: document.getElementById('beyond-rate'),
             totalQuanta: document.getElementById('total-quanta'),
             transcensions: document.getElementById('transcensions'),
             qe: document.getElementById('qe'),
@@ -117,21 +228,55 @@ class Game {
         return gen.baseProduction * this.owned[genId] * this.getBoost();
     }
     
+    getResourceRate(resource) {
+        let rate = 0;
+        GENERATORS.forEach(gen => {
+            if (gen.produces === resource) {
+                rate += this.getProduction(gen.id);
+            }
+        });
+        // Cascade bonus: each resource gives some of the resource below
+        if (resource === 'quanta') {
+            rate += this.getResourceRate('particles') * 0.1;
+        }
+        if (resource === 'particles') {
+            rate += this.getResourceRate('atoms') * 0.5;
+        }
+        if (resource === 'atoms') {
+            rate += this.getResourceRate('molecules') * 0.5;
+        }
+        if (resource === 'molecules') {
+            rate += this.getResourceRate('cells') * 0.5;
+        }
+        if (resource === 'cells') {
+            rate += this.getResourceRate('organisms') * 0.5;
+        }
+        if (resource === 'organisms') {
+            rate += this.getResourceRate('civilizations') * 0.5;
+        }
+        if (resource === 'civilizations') {
+            rate += this.getResourceRate('galaxies') * 0.5;
+        }
+        if (resource === 'galaxies') {
+            rate += this.getResourceRate('universe') * 0.5;
+        }
+        if (resource === 'universe') {
+            rate += this.getResourceRate('beyond') * 0.5;
+        }
+        return rate;
+    }
+    
     getQuantaRate() {
         return this.getProduction('foam_generator') 
              + this.getProduction('particle_accelerator') 
-             + this.getProduction('atomic_forge');
-    }
-    
-    getParticlesRate() {
-        const foam = this.owned.foam_generator * 0.1;
-        const accel = this.getProduction('particle_accelerator');
-        const atoms = this.owned.atomic_forge * 0.5;
-        return foam + accel + atoms;
-    }
-    
-    getAtomsRate() {
-        return this.getProduction('atomic_forge');
+             + this.getProduction('atomic_forge')
+             + this.getProduction('molecular_assembler')
+             + this.getProduction('bio_reactor')
+             + this.getProduction('evolution_chamber')
+             + this.getProduction('empire_engine')
+             + this.getProduction('star_forge')
+             + this.getProduction('reality_condenser')
+             + this.getProduction('void_gateway');
     }
     
     buyGenerator(genId) {
@@ -145,16 +290,29 @@ class Game {
     tick() {
         // Resources
         this.resources.quanta += this.getQuantaRate();
-        this.resources.particles += this.getParticlesRate();
-        this.resources.atoms += this.getAtomsRate();
+        this.resources.particles += this.getResourceRate('particles');
+        this.resources.atoms += this.getResourceRate('atoms');
+        this.resources.molecules += this.getResourceRate('molecules');
+        this.resources.cells += this.getResourceRate('cells');
+        this.resources.organisms += this.getResourceRate('organisms');
+        this.resources.civilizations += this.getResourceRate('civilizations');
+        this.resources.galaxies += this.getResourceRate('galaxies');
+        this.resources.universe += this.getResourceRate('universe');
+        this.resources.beyond += this.getResourceRate('beyond');
+        
         this.totalQuantaProduced += this.getQuantaRate();
         
-        // Cascade: accelerators make foam, forges make accelerators
-        const foamGain = Math.floor(this.getParticlesRate() * 0.5);
-        if (foamGain > 0) this.owned.foam_generator += foamGain;
-        
-        const accelGain = Math.floor(this.getAtomsRate() * 0.5);
-        if (accelGain > 0) this.owned.particle_accelerator += accelGain;
+        // Cascade: each generator produces the one below it
+        GENERATORS.forEach(gen => {
+            const cascadeTarget = CASCADE_FROM[gen.id];
+            if (cascadeTarget) {
+                const cascadeRate = this.getResourceRate(gen.produces) * 0.5;
+                const gain = Math.floor(cascadeRate);
+                if (gain > 0) {
+                    this.owned[cascadeTarget] += gain;
+                }
+            }
+        });
         
         this.render();
     }
@@ -178,8 +336,8 @@ class Game {
         if (!raw) return false;
         try {
             const data = JSON.parse(raw);
-            this.resources = data.resources || { quanta: 0, particles: 0, atoms: 0 };
-            this.owned = data.owned || { foam_generator: 0, particle_accelerator: 0, atomic_forge: 0 };
+            this.resources = { ...this.resources, ...data.resources };
+            this.owned = { ...this.owned, ...data.owned };
             this.totalQuantaProduced = data.totalQuantaProduced || 0;
             this.transcensions = data.transcensions || 0;
             this.quantumEssence = data.quantumEssence || 0;
@@ -193,8 +351,8 @@ class Game {
     
     reset() {
         localStorage.removeItem('quantumForge');
-        this.resources = { quanta: 0, particles: 0, atoms: 0 };
-        this.owned = { foam_generator: 0, particle_accelerator: 0, atomic_forge: 0 };
+        Object.keys(this.resources).forEach(k => this.resources[k] = 0);
+        Object.keys(this.owned).forEach(k => this.owned[k] = 0);
         this.totalQuantaProduced = 0;
         this.transcensions = 0;
         this.quantumEssence = 0;
@@ -205,7 +363,7 @@ class Game {
     
     format(n) {
         if (n < 1000) return Math.floor(n).toString();
-        const suffixes = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi'];
+        const suffixes = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc'];
         const tier = Math.min(Math.floor(Math.log10(n) / 3), suffixes.length - 1);
         return (n / Math.pow(1000, tier)).toFixed(1) + suffixes[tier];
     }
@@ -214,10 +372,33 @@ class Game {
         // Resources
         this.elements.quanta.textContent = this.format(this.resources.quanta);
         this.elements.quantaRate.textContent = `(+${this.format(this.getQuantaRate())}/s)`;
+        
         this.elements.particles.textContent = this.format(this.resources.particles);
-        this.elements.particlesRate.textContent = `(+${this.format(this.getParticlesRate())}/s)`;
+        this.elements.particlesRate.textContent = `(+${this.format(this.getResourceRate('particles'))}/s)`;
+        
         this.elements.atoms.textContent = this.format(this.resources.atoms);
-        this.elements.atomsRate.textContent = `(+${this.format(this.getAtomsRate())}/s)`;
+        this.elements.atomsRate.textContent = `(+${this.format(this.getResourceRate('atoms'))}/s)`;
+        
+        this.elements.molecules.textContent = this.format(this.resources.molecules);
+        this.elements.moleculesRate.textContent = `(+${this.format(this.getResourceRate('molecules'))}/s)`;
+        
+        this.elements.cells.textContent = this.format(this.resources.cells);
+        this.elements.cellsRate.textContent = `(+${this.format(this.getResourceRate('cells'))}/s)`;
+        
+        this.elements.organisms.textContent = this.format(this.resources.organisms);
+        this.elements.organismsRate.textContent = `(+${this.format(this.getResourceRate('organisms'))}/s)`;
+        
+        this.elements.civilizations.textContent = this.format(this.resources.civilizations);
+        this.elements.civilizationsRate.textContent = `(+${this.format(this.getResourceRate('civilizations'))}/s)`;
+        
+        this.elements.galaxies.textContent = this.format(this.resources.galaxies);
+        this.elements.galaxiesRate.textContent = `(+${this.format(this.getResourceRate('galaxies'))}/s)`;
+        
+        this.elements.universe.textContent = this.format(this.resources.universe);
+        this.elements.universeRate.textContent = `(+${this.format(this.getResourceRate('universe'))}/s)`;
+        
+        this.elements.beyond.textContent = this.format(this.resources.beyond);
+        this.elements.beyondRate.textContent = `(+${this.format(this.getResourceRate('beyond'))}/s)`;
         
         // Stats
         this.elements.totalQuanta.textContent = this.format(this.totalQuantaProduced);
@@ -236,13 +417,14 @@ class Game {
             
             // Cascade bonus
             let bonusText = '';
-            if (gen.id === 'foam_generator' && this.owned.particle_accelerator > 0) {
-                const bonus = Math.floor(this.getParticlesRate() * 0.5);
-                if (bonus > 0) bonusText = ` (+${this.format(bonus)}/s cascade)`;
-            }
-            if (gen.id === 'particle_accelerator' && this.owned.atomic_forge > 0) {
-                const bonus = Math.floor(this.getAtomsRate() * 0.5);
-                if (bonus > 0) bonusText = ` (+${this.format(bonus)}/s cascade)`;
+            const cascadeTarget = CASCADE_FROM[gen.id];
+            if (cascadeTarget && this.owned[gen.id] > 0) {
+                const cascadeRate = this.getResourceRate(gen.produces) * 0.5;
+                const bonus = Math.floor(cascadeRate);
+                if (bonus > 0) {
+                    const cascadeGen = GENERATORS.find(g => g.id === cascadeTarget);
+                    bonusText = ` (+${this.format(bonus)}/s ${cascadeGen.name.replace(' Generator','').replace(' Accelerator','').replace(' Forge','').replace(' Assembler','').replace(' Reactor','').replace(' Chamber','').replace(' Engine','').replace(' Condenser','').replace(' Gateway','')} cascade)`;
+                }
             }
             
             const el = document.createElement('div');
