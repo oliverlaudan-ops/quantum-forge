@@ -219,7 +219,7 @@ class Game {
         // Cascade: generators produce lower-tier generators over time
         // Particle accelerators produce foam generators (1% of particles rate)
         if (particlesRate > 0) {
-            const foamGain = Math.floor(particlesRate * 0.1);
+            const foamGain = Math.floor(particlesRate * 0.5);
             if (foamGain > 0) {
                 this.generators['foam_generator'].owned += foamGain;
             }
@@ -227,7 +227,7 @@ class Game {
         
         // Atomic forges produce particle accelerators (1% of atoms rate)
         if (atomsRate > 0) {
-            const accelGain = Math.floor(atomsRate * 0.1);
+            const accelGain = Math.floor(atomsRate * 0.5);
             if (accelGain > 0) {
                 this.generators['particle_accelerator'].owned += accelGain;
             }
