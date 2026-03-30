@@ -19,7 +19,7 @@ const GENERATORS = [
         description: 'Harvests energy from the quantum foam',
         layer: 0,
         baseCost: 10,
-        costMultiplier: 1.15,
+        costMultiplier: 1.12,
         baseProduction: 1,
         produces: 'quanta'
     },
@@ -28,8 +28,8 @@ const GENERATORS = [
         name: 'Particle Accelerator',
         description: 'Collides particles to extract energy',
         layer: 1,
-        baseCost: 50,
-        costMultiplier: 1.15,
+        baseCost: 25,
+        costMultiplier: 1.12,
         baseProduction: 1,
         produces: 'particles'
     },
@@ -38,8 +38,8 @@ const GENERATORS = [
         name: 'Atomic Forge',
         description: 'Fuses particles into atoms',
         layer: 2,
-        baseCost: 200,
-        costMultiplier: 1.15,
+        baseCost: 75,
+        costMultiplier: 1.12,
         baseProduction: 1,
         produces: 'atoms'
     },
@@ -48,8 +48,8 @@ const GENERATORS = [
         name: 'Molecular Assembler',
         description: 'Combines atoms into molecules',
         layer: 3,
-        baseCost: 1000,
-        costMultiplier: 1.15,
+        baseCost: 200,
+        costMultiplier: 1.12,
         baseProduction: 1,
         produces: 'molecules'
     },
@@ -58,8 +58,8 @@ const GENERATORS = [
         name: 'Bio-Reactor',
         description: 'Cultivates cellular structures',
         layer: 4,
-        baseCost: 5000,
-        costMultiplier: 1.15,
+        baseCost: 500,
+        costMultiplier: 1.12,
         baseProduction: 1,
         produces: 'cells'
     },
@@ -68,8 +68,8 @@ const GENERATORS = [
         name: 'Evolution Chamber',
         description: 'Accelerates evolutionary processes',
         layer: 5,
-        baseCost: 25000,
-        costMultiplier: 1.15,
+        baseCost: 1500,
+        costMultiplier: 1.12,
         baseProduction: 1,
         produces: 'organisms'
     },
@@ -78,8 +78,8 @@ const GENERATORS = [
         name: 'Empire Engine',
         description: 'Builds civilizations from organisms',
         layer: 6,
-        baseCost: 150000,
-        costMultiplier: 1.15,
+        baseCost: 5000,
+        costMultiplier: 1.12,
         baseProduction: 1,
         produces: 'civilizations'
     },
@@ -88,8 +88,8 @@ const GENERATORS = [
         name: 'Star Forge',
         description: 'Creates galaxies of stars',
         layer: 7,
-        baseCost: 1000000,
-        costMultiplier: 1.15,
+        baseCost: 20000,
+        costMultiplier: 1.12,
         baseProduction: 1,
         produces: 'galaxies'
     },
@@ -98,8 +98,8 @@ const GENERATORS = [
         name: 'Reality Condenser',
         description: 'Weaves universes from galaxies',
         layer: 8,
-        baseCost: 10000000,
-        costMultiplier: 1.15,
+        baseCost: 100000,
+        costMultiplier: 1.12,
         baseProduction: 1,
         produces: 'universe'
     },
@@ -108,8 +108,8 @@ const GENERATORS = [
         name: 'Void Gateway',
         description: 'Opens passages to the beyond',
         layer: 9,
-        baseCost: 100000000,
-        costMultiplier: 1.15,
+        baseCost: 500000,
+        costMultiplier: 1.12,
         baseProduction: 1,
         produces: 'beyond'
     }
