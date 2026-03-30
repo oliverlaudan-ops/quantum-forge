@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Forge</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="game-container">
+        <header>
+            <h1>Quantum Forge</h1>
+            <p class="subtitle">Forge reality. Transcend the forge. Become the smith of existence.</p>
+        </header>
+
+        <main>
+            <div id="layer-display">
+                <div id="current-layer">
+                    <span class="label">Layer:</span>
+                    <span id="layer-name">Quantum Foam</span>
+                </div>
+                <div id="resource-display">
+                    <div class="resource">
+                        <span class="res-name">Quanta:</span>
+                        <span id="quanta">0</span>
+                        <span class="res-rate" id="quanta-rate">(+0/s)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="generators">
+                <h3>Generators</h3>
+                <div id="generator-list"></div>
+            </div>
+
+            <div id="actions">
+                <button id="btn-save">Save</button>
+                <button id="btn-reset">Reset</button>
+            </div>
+
+            <div id="stats">
+                <div class="stat">
+                    <span class="label">Total Quanta:</span>
+                    <span id="total-quanta">0</span>
+                </div>
+                <div class="stat">
+                    <span class="label">Transcensions:</span>
+                    <span id="transcensions">0</span>
+                </div>
+                <div class="stat">
+                    <span class="label">Quantum Essence:</span>
+                    <span id="qe">0</span>
+                    <span class="res-rate" id="qe-mult">(+0%)</span>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p id="message"></p>
+        </footer>
+    </div>
+
+    <script src="js/game.js"></script>
+</body>
+</html>
