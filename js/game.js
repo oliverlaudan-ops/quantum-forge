@@ -229,54 +229,69 @@ class Game {
     }
     
     getResourceRate(resource) {
-        let rate = 0;
-        GENERATORS.forEach(gen => {
-            if (gen.produces === resource) {
-                rate += this.getProduction(gen.id);
-            }
-        });
-        // Cascade bonus: each resource gives some of the resource below
-        if (resource === 'quanta') {
-            rate += this.getResourceRate('particles') * 0.1;
+        switch(resource) {
+            case 'quanta': return this.getQuantaRate();
+            case 'particles': return this.getParticlesRate();
+            case 'atoms': return this.getAtomsRate();
+            case 'molecules': return this.getMoleculesRate();
+            case 'cells': return this.getCellsRate();
+            case 'organisms': return this.getOrganismsRate();
+            case 'civilizations': return this.getCivilizationsRate();
+            case 'galaxies': return this.getGalaxiesRate();
+            case 'universe': return this.getUniverseRate();
+            case 'beyond': return this.getBeyondRate();
+            default: return 0;
         }
-        if (resource === 'particles') {
-            rate += this.getResourceRate('atoms') * 0.5;
-        }
-        if (resource === 'atoms') {
-            rate += this.getResourceRate('molecules') * 0.5;
-        }
-        if (resource === 'molecules') {
-            rate += this.getResourceRate('cells') * 0.5;
-        }
-        if (resource === 'cells') {
-            rate += this.getResourceRate('organisms') * 0.5;
-        }
-        if (resource === 'organisms') {
-            rate += this.getResourceRate('civilizations') * 0.5;
-        }
-        if (resource === 'civilizations') {
-            rate += this.getResourceRate('galaxies') * 0.5;
-        }
-        if (resource === 'galaxies') {
-            rate += this.getResourceRate('universe') * 0.5;
-        }
-        if (resource === 'universe') {
-            rate += this.getResourceRate('beyond') * 0.5;
-        }
-        return rate;
     }
     
     getQuantaRate() {
-        return this.getProduction('foam_generator') 
-             + this.getProduction('particle_accelerator') 
-             + this.getProduction('atomic_forge')
-             + this.getProduction('molecular_assembler')
-             + this.getProduction('bio_reactor')
-             + this.getProduction('evolution_chamber')
-             + this.getProduction('empire_engine')
-             + this.getProduction('star_forge')
-             + this.getProduction('reality_condenser')
-             + this.getProduction('void_gateway');
+        // Only Foam Generators produce Quanta directly
+        return this.getProduction('foam_generator');
+    }
+    
+    getParticlesRate() {
+        // Direct + cascade from atoms
+        return this.getProduction('particle_accelerator') 
+             + this.getResourceRate('atoms') * 0.5;
+    }
+    
+    getAtomsRate() {
+        return this.getProduction('atomic_forge') 
+             + this.getResourceRate('molecules') * 0.5;
+    }
+    
+    getMoleculesRate() {
+        return this.getProduction('molecular_assembler')
+             + this.getResourceRate('cells') * 0.5;
+    }
+    
+    getCellsRate() {
+        return this.getProduction('bio_reactor')
+             + this.getResourceRate('organisms') * 0.5;
+    }
+    
+    getOrganismsRate() {
+        return this.getProduction('evolution_chamber')
+             + this.getResourceRate('civilizations') * 0.5;
+    }
+    
+    getCivilizationsRate() {
+        return this.getProduction('empire_engine')
+             + this.getResourceRate('galaxies') * 0.5;
+    }
+    
+    getGalaxiesRate() {
+        return this.getProduction('star_forge')
+             + this.getResourceRate('universe') * 0.5;
+    }
+    
+    getUniverseRate() {
+        return this.getProduction('reality_condenser')
+             + this.getResourceRate('beyond') * 0.5;
+    }
+    
+    getBeyondRate() {
+        return this.getProduction('void_gateway');
     }
     
     buyGenerator(genId) {
