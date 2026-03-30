@@ -156,25 +156,16 @@ class Game {
         return rate;
     }
     
-    // How many foam generators we effectively have
     getEffectiveFoamGenerators() {
-        const owned = this.generators['foam_generator'].owned;
-        // Each particle accelerator gives +1 foam generator
-        const fromParticles = this.generators['particle_accelerator'].owned;
-        // Each atomic forge gives +1 particle accelerator (which gives foam generators)
-        const fromAtoms = this.generators['atomic_forge'].owned;
-        
-        // Cascade: atoms → particle accelerators → foam generators
-        return owned + fromParticles + fromAtoms;
+        return this.generators['foam_generator'].owned;
     }
     
-    // How many particle accelerators we effectively have
     getEffectiveParticleAccelerators() {
-        const owned = this.generators['particle_accelerator'].owned;
-        // Each atomic forge gives +1 particle accelerator
-        const fromAtoms = this.generators['atomic_forge'].owned;
-        
-        return owned + fromAtoms;
+        return this.generators['particle_accelerator'].owned;
+    }
+    
+    getAtomsOwned() {
+        return this.generators['atomic_forge'].owned;
     }
     
     getParticlesRate() {
@@ -214,7 +205,7 @@ class Game {
     }
     
     tick() {
-        // Produce resources
+        // Produce resources from generators
         const quantaRate = this.getQuantaRate();
         const particlesRate = this.getParticlesRate();
         const atomsRate = this.getAtomsRate();
@@ -224,6 +215,23 @@ class Game {
         this.resources.atoms += atomsRate;
         
         this.totalQuantaProduced += quantaRate;
+        
+        // Cascade: generators produce lower-tier generators over time
+        // Particle accelerators produce foam generators (1% of particles rate)
+        if (particlesRate > 0) {
+            const foamGain = Math.floor(particlesRate * 0.1);
+            if (foamGain > 0) {
+                this.generators['foam_generator'].owned += foamGain;
+            }
+        }
+        
+        // Atomic forges produce particle accelerators (1% of atoms rate)
+        if (atomsRate > 0) {
+            const accelGain = Math.floor(atomsRate * 0.1);
+            if (accelGain > 0) {
+                this.generators['particle_accelerator'].owned += accelGain;
+            }
+        }
         
         this.render();
     }
