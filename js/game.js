@@ -74,6 +74,10 @@ class Game {
             btnReset: document.getElementById('btn-reset'),
             btnForge: document.getElementById('btn-forge'),
             forgeCount: document.getElementById('forge-count'),
+            particles: document.getElementById('particles'),
+            particlesRate: document.getElementById('particles-rate'),
+            atoms: document.getElementById('atoms'),
+            atomsRate: document.getElementById('atoms-rate'),
             message: document.getElementById('message')
         };
         
@@ -112,6 +116,15 @@ class Game {
         this.render();
     }
     
+    getResourceAbbr(resource) {
+        const abbrs = {
+            quanta: 'Quanta',
+            particles: 'Particles',
+            atoms: 'Atoms'
+        };
+        return abbrs[resource] || resource;
+    }
+    
     getQEBoost() {
         return 1 + (this.quantumEssence * 0.05);
     }
@@ -131,12 +144,11 @@ class Game {
     getQuantaRate() {
         let rate = 0;
         
-        // Direct foam generators
+        // Direct foam generators - produces both quanta and particles
         rate += this.getGeneratorProduction('foam_generator');
         
-        // Particles produce quanta
-        const particleProd = this.getGeneratorProduction('particle_accelerator');
-        rate += particleProd;
+        // Particle accelerators also produce quanta
+        rate += this.getGeneratorProduction('particle_accelerator');
         
         // Atoms produce particles (which produce quanta)
         const atomProd = this.getGeneratorProduction('atomic_forge');
@@ -146,7 +158,14 @@ class Game {
     }
     
     getParticlesRate() {
-        return this.getGeneratorProduction('particle_accelerator');
+        // Foam generators produce particles as byproduct
+        const foamProd = this.getGeneratorProduction('foam_generator');
+        // Particle accelerators produce particles
+        const accelProd = this.getGeneratorProduction('particle_accelerator');
+        // Atoms produce particles too
+        const atomProd = this.getGeneratorProduction('atomic_forge');
+        
+        return foamProd * 0.1 + accelProd + atomProd * 0.5;
     }
     
     getAtomsRate() {
@@ -253,6 +272,10 @@ class Game {
         // Resources
         this.elements.quanta.textContent = this.formatNumber(this.resources.quanta);
         this.elements.quantaRate.textContent = `(+${this.formatNumber(this.getQuantaRate())}/s)`;
+        this.elements.particles.textContent = this.formatNumber(this.resources.particles);
+        this.elements.particlesRate.textContent = `(+${this.formatNumber(this.getParticlesRate())}/s)`;
+        this.elements.atoms.textContent = this.formatNumber(this.resources.atoms);
+        this.elements.atomsRate.textContent = `(+${this.formatNumber(this.getAtomsRate())}/s)`;
         
         // Stats
         this.elements.totalQuanta.textContent = this.formatNumber(this.totalQuantaProduced);
@@ -293,7 +316,7 @@ class Game {
                 </div>
                 <div class="generator-stats">
                     <div class="generator-owned">Owned: ${owned}</div>
-                    <div class="generator-cost ${affordable ? 'affordable' : ''}">Cost: ${this.formatNumber(cost)} ${gen.layer === 0 ? 'Q' : gen.producesResource === 'particles' ? 'P' : 'A'}</div>
+                    <div class="generator-cost ${affordable ? 'affordable' : ''}">Cost: ${this.formatNumber(cost)} ${this.getResourceAbbr(gen.layer === 0 ? 'quanta' : gen.producesResource)}</div>
                 </div>
             `;
             
