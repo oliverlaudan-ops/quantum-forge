@@ -49,6 +49,7 @@ class Game {
         this.totalQuantaProduced = 0;
         this.transcensions = 0;
         this.quantumEssence = 0;
+        this.manualForges = 0;
         
         this.generators = {};
         GENERATORS.forEach(g => {
@@ -71,6 +72,8 @@ class Game {
             generatorList: document.getElementById('generator-list'),
             btnSave: document.getElementById('btn-save'),
             btnReset: document.getElementById('btn-reset'),
+            btnForge: document.getElementById('btn-forge'),
+            forgeCount: document.getElementById('forge-count'),
             message: document.getElementById('message')
         };
         
@@ -99,6 +102,14 @@ class Game {
                 this.reset();
             }
         });
+        this.elements.btnForge.addEventListener('click', () => this.forge());
+    }
+    
+    forge() {
+        this.resources.quanta++;
+        this.totalQuantaProduced++;
+        this.manualForges++;
+        this.render();
     }
     
     getQEBoost() {
@@ -178,6 +189,7 @@ class Game {
             totalQuantaProduced: this.totalQuantaProduced,
             transcensions: this.transcensions,
             quantumEssence: this.quantumEssence,
+            manualForges: this.manualForges,
             generators: this.generators,
             savedAt: Date.now()
         };
@@ -195,6 +207,7 @@ class Game {
             this.totalQuantaProduced = data.totalQuantaProduced || 0;
             this.transcensions = data.transcensions || 0;
             this.quantumEssence = data.quantumEssence || 0;
+            this.manualForges = data.manualForges || 0;
             this.generators = data.generators || {};
             
             // Ensure all generators exist
@@ -217,6 +230,7 @@ class Game {
         this.totalQuantaProduced = 0;
         this.transcensions = 0;
         this.quantumEssence = 0;
+        this.manualForges = 0;
         GENERATORS.forEach(g => {
             this.generators[g.id] = { owned: 0 };
         });
@@ -245,6 +259,7 @@ class Game {
         this.elements.transcensions.textContent = this.transcensions;
         this.elements.qe.textContent = this.quantumEssence;
         this.elements.qeMult.textContent = `(+${Math.floor((this.getQEBoost() - 1) * 100)}%)`;
+        this.elements.forgeCount.textContent = `${this.manualForges} forges`;
         
         // Generators
         this.renderGenerators();

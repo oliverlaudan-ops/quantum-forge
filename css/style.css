@@ -248,3 +248,39 @@ footer {
     color: var(--text-dim);
     font-size: 0.85rem;
 }
+
+#forge-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+#btn-forge {
+    background: linear-gradient(135deg, var(--accent) 0%, #5c3ce7 100%);
+    color: white;
+    border: 2px solid var(--accent-glow);
+    padding: 16px 48px;
+    font-size: 1.3rem;
+    font-weight: bold;
+    letter-spacing: 4px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.15s ease;
+    box-shadow: 0 0 20px rgba(124, 92, 231, 0.4);
+}
+
+#btn-forge:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 30px rgba(124, 92, 231, 0.6);
+}
+
+#btn-forge:active {
+    transform: scale(0.95);
+}
+
+#forge-count {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+}
