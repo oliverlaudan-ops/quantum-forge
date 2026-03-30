@@ -185,6 +185,7 @@ class Game {
     
     getGeneratorBaseProduction(genId) {
         const gen = GENERATORS.find(g => g.id === genId);
+        if (!gen) return 1; // Default for cascade generators
         return gen.baseProduction * this.getQEBoost();
     }
     
@@ -323,52 +324,55 @@ class Game {
     }
     
     renderGenerators() {
-        this.elements.generatorList.innerHTML = '';
-        
-        GENERATORS.forEach(gen => {
-            const owned = this.generators[gen.id].owned;
+        try {
+            this.elements.generatorList.innerHTML = '';
             
-            // Calculate effective production rate
-            let effectiveProduction = 0;
-            let baseProduction = 0;
-            let bonusText = '';
-            
-            if (gen.id === 'foam_generator') {
-                // Direct + cascade
-                effectiveProduction = this.getEffectiveFoamGenerators() * this.getGeneratorBaseProduction('foam_generator');
-                baseProduction = owned * this.getGeneratorBaseProduction('foam_generator');
-                const bonus = effectiveProduction - baseProduction;
-                if (bonus > 0) bonusText = ` (+${this.formatNumber(bonus)}/s from cascade)`;
-            } else if (gen.id === 'particle_accelerator') {
-                effectiveProduction = this.getEffectiveParticleAccelerators() * this.getGeneratorBaseProduction('particle_accelerator');
-                baseProduction = owned * this.getGeneratorBaseProduction('particle_accelerator');
-                const bonus = effectiveProduction - baseProduction;
-                if (bonus > 0) bonusText = ` (+${this.formatNumber(bonus)}/s from cascade)`;
-            } else {
-                effectiveProduction = owned * this.getGeneratorBaseProduction(gen.id);
-            }
-            
-            const cost = this.getGeneratorCost(gen.id);
-            const affordable = this.resources.quanta >= cost;
-            
-            const el = document.createElement('div');
-            el.className = 'generator';
-            
-            el.innerHTML = `
-                <div class="generator-info">
-                    <div class="generator-name">${gen.name}</div>
-                    <div class="generator-desc">${gen.description}</div>
-                </div>
-                <div class="generator-stats">
-                    <div class="generator-owned">Owned: ${owned}${bonusText}</div>
-                    <div class="generator-cost ${affordable ? 'affordable' : ''}">Cost: ${this.formatNumber(cost)} Quanta</div>
-                </div>
-            `;
-            
-            el.addEventListener('click', () => this.buyGenerator(gen.id));
-            
-            this.elements.generatorList.appendChild(el);
-        });
+            GENERATORS.forEach(gen => {
+                const owned = this.generators[gen.id]?.owned || 0;
+                
+                // Calculate effective production rate
+                let effectiveProduction = 0;
+                let baseProduction = 0;
+                let bonusText = '';
+                
+                if (gen.id === 'foam_generator') {
+                    effectiveProduction = this.getEffectiveFoamGenerators() * this.getGeneratorBaseProduction('foam_generator');
+                    baseProduction = owned * this.getGeneratorBaseProduction('foam_generator');
+                    const bonus = effectiveProduction - baseProduction;
+                    if (bonus > 0) bonusText = ` (+${this.formatNumber(bonus)}/s cascade)`;
+                } else if (gen.id === 'particle_accelerator') {
+                    effectiveProduction = this.getEffectiveParticleAccelerators() * this.getGeneratorBaseProduction('particle_accelerator');
+                    baseProduction = owned * this.getGeneratorBaseProduction('particle_accelerator');
+                    const bonus = effectiveProduction - baseProduction;
+                    if (bonus > 0) bonusText = ` (+${this.formatNumber(bonus)}/s cascade)`;
+                } else {
+                    effectiveProduction = owned * this.getGeneratorBaseProduction(gen.id);
+                }
+                
+                const cost = this.getGeneratorCost(gen.id);
+                const affordable = this.resources.quanta >= cost;
+                
+                const el = document.createElement('div');
+                el.className = 'generator';
+                
+                el.innerHTML = `
+                    <div class="generator-info">
+                        <div class="generator-name">${gen.name}</div>
+                        <div class="generator-desc">${gen.description}</div>
+                    </div>
+                    <div class="generator-stats">
+                        <div class="generator-owned">Owned: ${owned}${bonusText}</div>
+                        <div class="generator-cost ${affordable ? 'affordable' : ''}">Cost: ${this.formatNumber(cost)} Quanta</div>
+                    </div>
+                `;
+                
+                el.addEventListener('click', () => this.buyGenerator(gen.id));
+                
+                this.elements.generatorList.appendChild(el);
+            });
+        } catch (e) {
+            console.error('renderGenerators error:', e);
+        }
     }
     
     startTicks() {
