@@ -1,8 +1,8 @@
 // Game Configuration
 const LAYERS = [
-    { id: 0, name: 'Quantum Foam', resource: 'quanta', produces: null },
-    { id: 1, name: 'Particles', resource: 'particles', produces: 'quanta' },
-    { id: 2, name: 'Atoms', resource: 'atoms', produces: 'particles' }
+    { id: 0, name: 'Quantum Foam', resource: 'quanta' },
+    { id: 1, name: 'Particles', resource: 'particles' },
+    { id: 2, name: 'Atoms', resource: 'atoms' }
 ];
 
 const GENERATORS = [
@@ -14,17 +14,17 @@ const GENERATORS = [
         baseCost: 10,
         costMultiplier: 1.15,
         baseProduction: 1,
-        producesResource: 'quanta'
+        produces: 'quanta'
     },
     {
         id: 'particle_accelerator',
         name: 'Particle Accelerator',
-        description: 'Collides particles to extract quanta',
+        description: 'Collides particles to extract energy',
         layer: 1,
         baseCost: 50,
         costMultiplier: 1.15,
         baseProduction: 1,
-        producesResource: 'particles'
+        produces: 'particles'
     },
     {
         id: 'atomic_forge',
@@ -34,57 +34,49 @@ const GENERATORS = [
         baseCost: 200,
         costMultiplier: 1.15,
         baseProduction: 1,
-        producesResource: 'atoms'
+        produces: 'atoms'
     }
 ];
 
 class Game {
     constructor() {
-        this.resources = {
-            quanta: 0,
-            particles: 0,
-            atoms: 0
-        };
-        
+        this.resources = { quanta: 0, particles: 0, atoms: 0 };
+        this.owned = { foam_generator: 0, particle_accelerator: 0, atomic_forge: 0 };
         this.totalQuantaProduced = 0;
         this.transcensions = 0;
         this.quantumEssence = 0;
         this.manualForges = 0;
-        
-        this.generators = {};
-        GENERATORS.forEach(g => {
-            this.generators[g.id] = { owned: 0 };
-        });
         
         this.tickInterval = null;
         this.autoSaveInterval = null;
         this.tickRate = 1000;
         this.autoSaveRate = 30000;
         
-        this.elements = {
-            layerName: document.getElementById('layer-name'),
-            quanta: document.getElementById('quanta'),
-            quantaRate: document.getElementById('quanta-rate'),
-            totalQuanta: document.getElementById('total-quanta'),
-            transcensions: document.getElementById('transcensions'),
-            qe: document.getElementById('qe'),
-            qeMult: document.getElementById('qe-mult'),
-            generatorList: document.getElementById('generator-list'),
-            btnSave: document.getElementById('btn-save'),
-            btnReset: document.getElementById('btn-reset'),
-            btnForge: document.getElementById('btn-forge'),
-            forgeCount: document.getElementById('forge-count'),
-            particles: document.getElementById('particles'),
-            particlesRate: document.getElementById('particles-rate'),
-            atoms: document.getElementById('atoms'),
-            atomsRate: document.getElementById('atoms-rate'),
-            message: document.getElementById('message')
-        };
-        
+        this.elements = {};
         this.init();
     }
     
     init() {
+        // Get DOM elements
+        this.elements = {
+            quanta: document.getElementById('quanta'),
+            quantaRate: document.getElementById('quanta-rate'),
+            particles: document.getElementById('particles'),
+            particlesRate: document.getElementById('particles-rate'),
+            atoms: document.getElementById('atoms'),
+            atomsRate: document.getElementById('atoms-rate'),
+            totalQuanta: document.getElementById('total-quanta'),
+            transcensions: document.getElementById('transcensions'),
+            qe: document.getElementById('qe'),
+            qeMult: document.getElementById('qe-mult'),
+            forgeCount: document.getElementById('forge-count'),
+            generatorList: document.getElementById('generator-list'),
+            btnForge: document.getElementById('btn-forge'),
+            btnSave: document.getElementById('btn-save'),
+            btnReset: document.getElementById('btn-reset'),
+            message: document.getElementById('message')
+        };
+        
         const loaded = this.load();
         this.render();
         
@@ -94,19 +86,14 @@ class Game {
             this.elements.message.textContent = 'Welcome to Quantum Forge.';
         }
         
-        this.bindEvents();
-        this.startTicks();
-        this.startAutoSave();
-    }
-    
-    bindEvents() {
+        this.elements.btnForge.addEventListener('click', () => this.forge());
         this.elements.btnSave.addEventListener('click', () => this.save());
         this.elements.btnReset.addEventListener('click', () => {
-            if (confirm('Reset all progress? This cannot be undone.')) {
-                this.reset();
-            }
+            if (confirm('Reset all progress?')) this.reset();
         });
-        this.elements.btnForge.addEventListener('click', () => this.forge());
+        
+        this.startTicks();
+        this.startAutoSave();
     }
     
     forge() {
@@ -116,123 +103,58 @@ class Game {
         this.render();
     }
     
-    getResourceAbbr(resource) {
-        const abbrs = {
-            quanta: 'Quanta',
-            particles: 'Particles',
-            atoms: 'Atoms'
-        };
-        return abbrs[resource] || resource;
-    }
-    
-    getQEBoost() {
+    getBoost() {
         return 1 + (this.quantumEssence * 0.05);
     }
     
-    getGeneratorCost(genId) {
+    getCost(genId) {
         const gen = GENERATORS.find(g => g.id === genId);
-        const owned = this.generators[genId].owned;
-        return Math.floor(gen.baseCost * Math.pow(gen.costMultiplier, owned));
+        return Math.floor(gen.baseCost * Math.pow(gen.costMultiplier, this.owned[genId]));
     }
     
-    getGeneratorProduction(genId) {
+    getProduction(genId) {
         const gen = GENERATORS.find(g => g.id === genId);
-        const owned = this.generators[genId].owned;
-        return gen.baseProduction * owned * this.getQEBoost();
+        return gen.baseProduction * this.owned[genId] * this.getBoost();
     }
     
     getQuantaRate() {
-        let rate = 0;
-        
-        // Foam generators produce quanta directly
-        rate += this.getGeneratorProduction('foam_generator');
-        
-        // Particle accelerators produce quanta directly
-        rate += this.getGeneratorProduction('particle_accelerator');
-        
-        // Atomic forges produce quanta
-        rate += this.getGeneratorProduction('atomic_forge');
-        
-        return rate;
-    }
-    
-    getEffectiveFoamGenerators() {
-        return this.generators['foam_generator'].owned;
-    }
-    
-    getEffectiveParticleAccelerators() {
-        return this.generators['particle_accelerator'].owned;
-    }
-    
-    getAtomsOwned() {
-        return this.generators['atomic_forge'].owned;
+        return this.getProduction('foam_generator') 
+             + this.getProduction('particle_accelerator') 
+             + this.getProduction('atomic_forge');
     }
     
     getParticlesRate() {
-        // Foam generators produce particles as byproduct
-        const foamProd = this.getEffectiveFoamGenerators() * this.getGeneratorBaseProduction('foam_generator');
-        // Effective particle accelerators produce particles
-        const accelProd = this.getEffectiveParticleAccelerators() * this.getGeneratorBaseProduction('particle_accelerator');
-        // Atomic forges produce particles
-        const atomProd = this.generators['atomic_forge'].owned * this.getGeneratorBaseProduction('atomic_forge');
-        
-        return foamProd * 0.1 + accelProd + atomProd * 0.5;
+        const foam = this.owned.foam_generator * 0.1;
+        const accel = this.getProduction('particle_accelerator');
+        const atoms = this.owned.atomic_forge * 0.5;
+        return foam + accel + atoms;
     }
     
     getAtomsRate() {
-        return this.getEffectiveParticleAccelerators() * this.getGeneratorBaseProduction('atomic_forge');
-    }
-    
-    getGeneratorBaseProduction(genId) {
-        const gen = GENERATORS.find(g => g.id === genId);
-        if (!gen) return 1; // Default for cascade generators
-        return gen.baseProduction * this.getQEBoost();
+        return this.getProduction('atomic_forge');
     }
     
     buyGenerator(genId) {
-        const cost = this.getGeneratorCost(genId);
-        const gen = GENERATORS.find(g => g.id === genId);
-        
-        // All generators cost quanta
-        if (this.resources.quanta < cost) {
-            return false;
-        }
-        
+        const cost = this.getCost(genId);
+        if (this.resources.quanta < cost) return;
         this.resources.quanta -= cost;
-        this.generators[genId].owned++;
-        
+        this.owned[genId]++;
         this.render();
-        return true;
     }
     
     tick() {
-        // Produce resources from generators
-        const quantaRate = this.getQuantaRate();
-        const particlesRate = this.getParticlesRate();
-        const atomsRate = this.getAtomsRate();
+        // Resources
+        this.resources.quanta += this.getQuantaRate();
+        this.resources.particles += this.getParticlesRate();
+        this.resources.atoms += this.getAtomsRate();
+        this.totalQuantaProduced += this.getQuantaRate();
         
-        this.resources.quanta += quantaRate;
-        this.resources.particles += particlesRate;
-        this.resources.atoms += atomsRate;
+        // Cascade: accelerators make foam, forges make accelerators
+        const foamGain = Math.floor(this.getParticlesRate() * 0.5);
+        if (foamGain > 0) this.owned.foam_generator += foamGain;
         
-        this.totalQuantaProduced += quantaRate;
-        
-        // Cascade: generators produce lower-tier generators over time
-        // Particle accelerators produce foam generators (1% of particles rate)
-        if (particlesRate > 0) {
-            const foamGain = Math.floor(particlesRate * 0.5);
-            if (foamGain > 0) {
-                this.generators['foam_generator'].owned += foamGain;
-            }
-        }
-        
-        // Atomic forges produce particle accelerators (1% of atoms rate)
-        if (atomsRate > 0) {
-            const accelGain = Math.floor(atomsRate * 0.5);
-            if (accelGain > 0) {
-                this.generators['particle_accelerator'].owned += accelGain;
-            }
-        }
+        const accelGain = Math.floor(this.getAtomsRate() * 0.5);
+        if (accelGain > 0) this.owned.particle_accelerator += accelGain;
         
         this.render();
     }
@@ -240,11 +162,11 @@ class Game {
     save() {
         const data = {
             resources: this.resources,
+            owned: this.owned,
             totalQuantaProduced: this.totalQuantaProduced,
             transcensions: this.transcensions,
             quantumEssence: this.quantumEssence,
             manualForges: this.manualForges,
-            generators: this.generators,
             savedAt: Date.now()
         };
         localStorage.setItem('quantumForge', JSON.stringify(data));
@@ -254,26 +176,17 @@ class Game {
     load() {
         const raw = localStorage.getItem('quantumForge');
         if (!raw) return false;
-        
         try {
             const data = JSON.parse(raw);
             this.resources = data.resources || { quanta: 0, particles: 0, atoms: 0 };
+            this.owned = data.owned || { foam_generator: 0, particle_accelerator: 0, atomic_forge: 0 };
             this.totalQuantaProduced = data.totalQuantaProduced || 0;
             this.transcensions = data.transcensions || 0;
             this.quantumEssence = data.quantumEssence || 0;
             this.manualForges = data.manualForges || 0;
-            this.generators = data.generators || {};
-            
-            // Ensure all generators exist
-            GENERATORS.forEach(g => {
-                if (!this.generators[g.id]) {
-                    this.generators[g.id] = { owned: 0 };
-                }
-            });
-            
             return true;
         } catch (e) {
-            console.error('Failed to load save:', e);
+            console.error('Load failed:', e);
             return false;
         }
     }
@@ -281,98 +194,72 @@ class Game {
     reset() {
         localStorage.removeItem('quantumForge');
         this.resources = { quanta: 0, particles: 0, atoms: 0 };
+        this.owned = { foam_generator: 0, particle_accelerator: 0, atomic_forge: 0 };
         this.totalQuantaProduced = 0;
         this.transcensions = 0;
         this.quantumEssence = 0;
         this.manualForges = 0;
-        GENERATORS.forEach(g => {
-            this.generators[g.id] = { owned: 0 };
-        });
         this.elements.message.textContent = 'Game reset.';
         this.render();
     }
     
-    formatNumber(n) {
+    format(n) {
         if (n < 1000) return Math.floor(n).toString();
-        
-        const suffixes = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc'];
-        const tier = Math.floor(Math.log10(n) / 3);
-        if (tier >= suffixes.length) tier = suffixes.length - 1;
-        
-        const scaled = n / Math.pow(1000, tier);
-        return scaled.toFixed(1) + suffixes[tier];
+        const suffixes = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi'];
+        const tier = Math.min(Math.floor(Math.log10(n) / 3), suffixes.length - 1);
+        return (n / Math.pow(1000, tier)).toFixed(1) + suffixes[tier];
     }
     
     render() {
         // Resources
-        this.elements.quanta.textContent = this.formatNumber(this.resources.quanta);
-        this.elements.quantaRate.textContent = `(+${this.formatNumber(this.getQuantaRate())}/s)`;
-        this.elements.particles.textContent = this.formatNumber(this.resources.particles);
-        this.elements.particlesRate.textContent = `(+${this.formatNumber(this.getParticlesRate())}/s)`;
-        this.elements.atoms.textContent = this.formatNumber(this.resources.atoms);
-        this.elements.atomsRate.textContent = `(+${this.formatNumber(this.getAtomsRate())}/s)`;
+        this.elements.quanta.textContent = this.format(this.resources.quanta);
+        this.elements.quantaRate.textContent = `(+${this.format(this.getQuantaRate())}/s)`;
+        this.elements.particles.textContent = this.format(this.resources.particles);
+        this.elements.particlesRate.textContent = `(+${this.format(this.getParticlesRate())}/s)`;
+        this.elements.atoms.textContent = this.format(this.resources.atoms);
+        this.elements.atomsRate.textContent = `(+${this.format(this.getAtomsRate())}/s)`;
         
         // Stats
-        this.elements.totalQuanta.textContent = this.formatNumber(this.totalQuantaProduced);
+        this.elements.totalQuanta.textContent = this.format(this.totalQuantaProduced);
         this.elements.transcensions.textContent = this.transcensions;
         this.elements.qe.textContent = this.quantumEssence;
-        this.elements.qeMult.textContent = `(+${Math.floor((this.getQEBoost() - 1) * 100)}%)`;
+        this.elements.qeMult.textContent = `(+${Math.floor((this.getBoost() - 1) * 100)}%)`;
         this.elements.forgeCount.textContent = `${this.manualForges} forges`;
         
         // Generators
-        this.renderGenerators();
-    }
-    
-    renderGenerators() {
-        try {
-            this.elements.generatorList.innerHTML = '';
+        this.elements.generatorList.innerHTML = '';
+        
+        GENERATORS.forEach(gen => {
+            const owned = this.owned[gen.id] || 0;
+            const cost = this.getCost(gen.id);
+            const affordable = this.resources.quanta >= cost;
             
-            GENERATORS.forEach(gen => {
-                const owned = this.generators[gen.id]?.owned || 0;
-                
-                // Calculate effective production rate
-                let effectiveProduction = 0;
-                let baseProduction = 0;
-                let bonusText = '';
-                
-                if (gen.id === 'foam_generator') {
-                    effectiveProduction = this.getEffectiveFoamGenerators() * this.getGeneratorBaseProduction('foam_generator');
-                    baseProduction = owned * this.getGeneratorBaseProduction('foam_generator');
-                    const bonus = effectiveProduction - baseProduction;
-                    if (bonus > 0) bonusText = ` (+${this.formatNumber(bonus)}/s cascade)`;
-                } else if (gen.id === 'particle_accelerator') {
-                    effectiveProduction = this.getEffectiveParticleAccelerators() * this.getGeneratorBaseProduction('particle_accelerator');
-                    baseProduction = owned * this.getGeneratorBaseProduction('particle_accelerator');
-                    const bonus = effectiveProduction - baseProduction;
-                    if (bonus > 0) bonusText = ` (+${this.formatNumber(bonus)}/s cascade)`;
-                } else {
-                    effectiveProduction = owned * this.getGeneratorBaseProduction(gen.id);
-                }
-                
-                const cost = this.getGeneratorCost(gen.id);
-                const affordable = this.resources.quanta >= cost;
-                
-                const el = document.createElement('div');
-                el.className = 'generator';
-                
-                el.innerHTML = `
-                    <div class="generator-info">
-                        <div class="generator-name">${gen.name}</div>
-                        <div class="generator-desc">${gen.description}</div>
-                    </div>
-                    <div class="generator-stats">
-                        <div class="generator-owned">Owned: ${owned}${bonusText}</div>
-                        <div class="generator-cost ${affordable ? 'affordable' : ''}">Cost: ${this.formatNumber(cost)} Quanta</div>
-                    </div>
-                `;
-                
-                el.addEventListener('click', () => this.buyGenerator(gen.id));
-                
-                this.elements.generatorList.appendChild(el);
-            });
-        } catch (e) {
-            console.error('renderGenerators error:', e);
-        }
+            // Cascade bonus
+            let bonusText = '';
+            if (gen.id === 'foam_generator' && this.owned.particle_accelerator > 0) {
+                const bonus = Math.floor(this.getParticlesRate() * 0.5);
+                if (bonus > 0) bonusText = ` (+${this.format(bonus)}/s cascade)`;
+            }
+            if (gen.id === 'particle_accelerator' && this.owned.atomic_forge > 0) {
+                const bonus = Math.floor(this.getAtomsRate() * 0.5);
+                if (bonus > 0) bonusText = ` (+${this.format(bonus)}/s cascade)`;
+            }
+            
+            const el = document.createElement('div');
+            el.className = 'generator';
+            el.innerHTML = `
+                <div class="generator-info">
+                    <div class="generator-name">${gen.name}</div>
+                    <div class="generator-desc">${gen.description}</div>
+                </div>
+                <div class="generator-stats">
+                    <div class="generator-owned">Owned: ${owned}${bonusText}</div>
+                    <div class="generator-cost ${affordable ? 'affordable' : ''}">Cost: ${this.format(cost)} Quanta</div>
+                </div>
+            `;
+            el.addEventListener('click', () => this.buyGenerator(gen.id));
+            this.elements.generatorList.appendChild(el);
+        });
     }
     
     startTicks() {
@@ -384,7 +271,6 @@ class Game {
     }
 }
 
-// Initialize
 document.addEventListener('DOMContentLoaded', () => {
     window.game = new Game();
 });
