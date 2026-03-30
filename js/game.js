@@ -144,32 +144,57 @@ class Game {
     getQuantaRate() {
         let rate = 0;
         
-        // Direct foam generators - produces both quanta and particles
+        // Foam generators produce quanta directly
         rate += this.getGeneratorProduction('foam_generator');
         
-        // Particle accelerators also produce quanta
+        // Particle accelerators produce quanta directly
         rate += this.getGeneratorProduction('particle_accelerator');
         
-        // Atoms produce particles (which produce quanta)
-        const atomProd = this.getGeneratorProduction('atomic_forge');
-        rate += atomProd * 10; // Atoms give bonus to quanta
+        // Atomic forges produce quanta
+        rate += this.getGeneratorProduction('atomic_forge');
         
         return rate;
     }
     
+    // How many foam generators we effectively have
+    getEffectiveFoamGenerators() {
+        const owned = this.generators['foam_generator'].owned;
+        // Each particle accelerator gives +1 foam generator
+        const fromParticles = this.generators['particle_accelerator'].owned;
+        // Each atomic forge gives +1 particle accelerator (which gives foam generators)
+        const fromAtoms = this.generators['atomic_forge'].owned;
+        
+        // Cascade: atoms → particle accelerators → foam generators
+        return owned + fromParticles + fromAtoms;
+    }
+    
+    // How many particle accelerators we effectively have
+    getEffectiveParticleAccelerators() {
+        const owned = this.generators['particle_accelerator'].owned;
+        // Each atomic forge gives +1 particle accelerator
+        const fromAtoms = this.generators['atomic_forge'].owned;
+        
+        return owned + fromAtoms;
+    }
+    
     getParticlesRate() {
         // Foam generators produce particles as byproduct
-        const foamProd = this.getGeneratorProduction('foam_generator');
-        // Particle accelerators produce particles
-        const accelProd = this.getGeneratorProduction('particle_accelerator');
-        // Atoms produce particles too
-        const atomProd = this.getGeneratorProduction('atomic_forge');
+        const foamProd = this.getEffectiveFoamGenerators() * this.getGeneratorBaseProduction('foam_generator');
+        // Effective particle accelerators produce particles
+        const accelProd = this.getEffectiveParticleAccelerators() * this.getGeneratorBaseProduction('particle_accelerator');
+        // Atomic forges produce particles
+        const atomProd = this.generators['atomic_forge'].owned * this.getGeneratorBaseProduction('atomic_forge');
         
         return foamProd * 0.1 + accelProd + atomProd * 0.5;
     }
     
     getAtomsRate() {
-        return this.getGeneratorProduction('atomic_forge');
+        return this.getEffectiveParticleAccelerators() * this.getGeneratorBaseProduction('atomic_forge');
+    }
+    
+    getGeneratorBaseProduction(genId) {
+        const gen = GENERATORS.find(g => g.id === genId);
+        return gen.baseProduction * this.getQEBoost();
     }
     
     buyGenerator(genId) {
@@ -294,18 +319,22 @@ class Game {
         
         GENERATORS.forEach(gen => {
             const owned = this.generators[gen.id].owned;
-            const cost = this.getGeneratorCost(gen.id);
-            const production = this.getGeneratorProduction(gen.id);
+            let effectiveOwned = owned;
+            let bonusText = '';
             
-            // Determine if we can afford this
-            let affordable = false;
-            if (gen.layer === 0) {
-                affordable = this.resources.quanta >= cost;
-            } else if (gen.producesResource === 'particles') {
-                affordable = this.resources.particles >= cost;
-            } else if (gen.producesResource === 'atoms') {
-                affordable = this.resources.atoms >= cost;
+            // Show effective count based on cascade
+            if (gen.id === 'foam_generator') {
+                effectiveOwned = this.getEffectiveFoamGenerators();
+                const bonus = effectiveOwned - owned;
+                if (bonus > 0) bonusText = ` (+${bonus} from accelerators)`;
+            } else if (gen.id === 'particle_accelerator') {
+                effectiveOwned = this.getEffectiveParticleAccelerators();
+                const bonus = effectiveOwned - owned;
+                if (bonus > 0) bonusText = ` (+${bonus} from forges)`;
             }
+            
+            const cost = this.getGeneratorCost(gen.id);
+            const affordable = this.resources.quanta >= cost;
             
             const el = document.createElement('div');
             el.className = 'generator';
@@ -316,7 +345,7 @@ class Game {
                     <div class="generator-desc">${gen.description}</div>
                 </div>
                 <div class="generator-stats">
-                    <div class="generator-owned">Owned: ${owned}</div>
+                    <div class="generator-owned">Owned: ${effectiveOwned}${bonusText}</div>
                     <div class="generator-cost ${affordable ? 'affordable' : ''}">Cost: ${this.formatNumber(cost)} Quanta</div>
                 </div>
             `;
