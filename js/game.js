@@ -176,11 +176,12 @@ class Game {
         const cost = this.getGeneratorCost(genId);
         const gen = GENERATORS.find(g => g.id === genId);
         
-        if (this.resources[gen.layer === 0 ? 'quanta' : gen.producesResource] < cost) {
+        // All generators cost quanta
+        if (this.resources.quanta < cost) {
             return false;
         }
         
-        this.resources[gen.layer === 0 ? 'quanta' : gen.producesResource] -= cost;
+        this.resources.quanta -= cost;
         this.generators[genId].owned++;
         
         this.render();
@@ -316,7 +317,7 @@ class Game {
                 </div>
                 <div class="generator-stats">
                     <div class="generator-owned">Owned: ${owned}</div>
-                    <div class="generator-cost ${affordable ? 'affordable' : ''}">Cost: ${this.formatNumber(cost)} ${this.getResourceAbbr(gen.layer === 0 ? 'quanta' : gen.producesResource)}</div>
+                    <div class="generator-cost ${affordable ? 'affordable' : ''}">Cost: ${this.formatNumber(cost)} Quanta</div>
                 </div>
             `;
             
