@@ -318,13 +318,14 @@ class Game {
         this.totalQuantaProduced += this.getQuantaRate();
         
         // Cascade: each generator produces the one below it
+        // Higher tier generators directly produce lower tier generators
         GENERATORS.forEach(gen => {
             const cascadeTarget = CASCADE_FROM[gen.id];
             if (cascadeTarget) {
-                const cascadeRate = this.getResourceRate(gen.produces) * 0.5;
-                const gain = Math.floor(cascadeRate);
-                if (gain > 0) {
-                    this.owned[cascadeTarget] += gain;
+                // Cascade rate = owned generators * 0.5 per second
+                const cascadeGain = Math.floor(this.owned[gen.id] * 0.5);
+                if (cascadeGain > 0) {
+                    this.owned[cascadeTarget] += cascadeGain;
                 }
             }
         });
