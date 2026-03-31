@@ -129,6 +129,20 @@ const CASCADE_FROM = {
     void_gateway: 'reality_condenser'
 };
 
+// Layer tiers for transcendence scoring
+const LAYER_TIER = {
+    quanta: 1,
+    particles: 2,
+    atoms: 3,
+    molecules: 4,
+    cells: 5,
+    organisms: 6,
+    civilizations: 7,
+    galaxies: 8,
+    universe: 9,
+    beyond: 10
+};
+
 class Game {
     constructor() {
         this.resources = {
@@ -144,6 +158,9 @@ class Game {
         this.transcensions = 0;
         this.quantumEssence = 0;
         this.manualForges = 0;
+        
+        // Track highest tier reached for transcension scoring
+        this.highestTier = 0;
         
         this.tickInterval = null;
         this.autoSaveInterval = null;
@@ -181,6 +198,9 @@ class Game {
             qe: document.getElementById('qe'),
             qeMult: document.getElementById('qe-mult'),
             forgeCount: document.getElementById('forge-count'),
+            transcendSection: document.getElementById('transcend-section'),
+            transcendGain: document.getElementById('transcend-gain'),
+            btnTranscend: document.getElementById('btn-transcend'),
             generatorList: document.getElementById('generator-list'),
             btnForge: document.getElementById('btn-forge'),
             btnSave: document.getElementById('btn-save'),
@@ -200,8 +220,9 @@ class Game {
         this.elements.btnForge.addEventListener('click', () => this.forge());
         this.elements.btnSave.addEventListener('click', () => this.save());
         this.elements.btnReset.addEventListener('click', () => {
-            if (confirm('Reset all progress?')) this.reset();
+            if (confirm('Reset ALL progress including Quantum Essence?')) this.reset(true);
         });
+        this.elements.btnTranscend.addEventListener('click', () => this.transcend());
         
         this.startTicks();
         this.startAutoSave();
@@ -215,7 +236,7 @@ class Game {
     }
     
     getBoost() {
-        return 1 + (this.quantumEssence * 0.05);
+        return 1 + (this.quantumEssence * 0.1);
     }
     
     getCost(genId) {
@@ -228,29 +249,11 @@ class Game {
         return gen.baseProduction * this.owned[genId] * this.getBoost();
     }
     
-    getResourceRate(resource) {
-        switch(resource) {
-            case 'quanta': return this.getQuantaRate();
-            case 'particles': return this.getParticlesRate();
-            case 'atoms': return this.getAtomsRate();
-            case 'molecules': return this.getMoleculesRate();
-            case 'cells': return this.getCellsRate();
-            case 'organisms': return this.getOrganismsRate();
-            case 'civilizations': return this.getCivilizationsRate();
-            case 'galaxies': return this.getGalaxiesRate();
-            case 'universe': return this.getUniverseRate();
-            case 'beyond': return this.getBeyondRate();
-            default: return 0;
-        }
-    }
-    
     getQuantaRate() {
-        // Only Foam Generators produce Quanta directly
         return this.getProduction('foam_generator');
     }
     
     getParticlesRate() {
-        // Direct + cascade from atoms
         return this.getProduction('particle_accelerator') 
              + this.getResourceRate('atoms') * 0.5;
     }
@@ -294,6 +297,90 @@ class Game {
         return this.getProduction('void_gateway');
     }
     
+    getResourceRate(resource) {
+        switch(resource) {
+            case 'quanta': return this.getQuantaRate();
+            case 'particles': return this.getParticlesRate();
+            case 'atoms': return this.getAtomsRate();
+            case 'molecules': return this.getMoleculesRate();
+            case 'cells': return this.getCellsRate();
+            case 'organisms': return this.getOrganismsRate();
+            case 'civilizations': return this.getCivilizationsRate();
+            case 'galaxies': return this.getGalaxiesRate();
+            case 'universe': return this.getUniverseRate();
+            case 'beyond': return this.getBeyondRate();
+            default: return 0;
+        }
+    }
+    
+    // Calculate transcension points based on highest tier reached
+    calculateTranscendPoints() {
+        // Check which tiers have significant production
+        let score = 0;
+        
+        if (this.resources.beyond >= 1) {
+            score = 1000 + Math.floor(this.resources.beyond * 10);
+            this.highestTier = 10;
+        } else if (this.resources.universe >= 1) {
+            score = 500 + Math.floor(this.resources.universe * 5);
+            this.highestTier = 9;
+        } else if (this.resources.galaxies >= 1) {
+            score = 200 + Math.floor(this.resources.galaxies * 2);
+            this.highestTier = 8;
+        } else if (this.resources.civilizations >= 1) {
+            score = 100;
+            this.highestTier = 7;
+        } else if (this.resources.organisms >= 1) {
+            score = 50;
+            this.highestTier = 6;
+        } else if (this.resources.cells >= 1) {
+            score = 20;
+            this.highestTier = 5;
+        } else if (this.resources.molecules >= 1) {
+            score = 10;
+            this.highestTier = 4;
+        } else if (this.resources.atoms >= 1) {
+            score = 5;
+            this.highestTier = 3;
+        } else if (this.resources.particles >= 1) {
+            score = 2;
+            this.highestTier = 2;
+        } else {
+            this.highestTier = 1;
+        }
+        
+        // Bonus for total quanta produced
+        score += Math.floor(Math.log10(this.totalQuantaProduced + 1));
+        
+        // Cap minimum at 1
+        return Math.max(1, score);
+    }
+    
+    canTranscend() {
+        // Can transcend if you reached at least Atoms (tier 3)
+        return this.highestTier >= 3 && this.resources.atoms >= 1;
+    }
+    
+    getTranscendPreview() {
+        if (!this.canTranscend()) return 0;
+        return this.calculateTranscendPoints();
+    }
+    
+    transcend() {
+        if (!this.canTranscend()) return;
+        
+        const gain = this.calculateTranscendPoints();
+        this.quantumEssence += gain;
+        this.transcensions++;
+        
+        // Reset progress but keep QE
+        this.reset(false);
+        
+        this.elements.message.textContent = `Transcended! +${gain} Quantum Essence.`;
+        this.save();
+        this.render();
+    }
+    
     buyGenerator(genId) {
         const cost = this.getCost(genId);
         if (this.resources.quanta < cost) return;
@@ -318,11 +405,9 @@ class Game {
         this.totalQuantaProduced += this.getQuantaRate();
         
         // Cascade: each generator produces the one below it
-        // Higher tier generators directly produce lower tier generators
         GENERATORS.forEach(gen => {
             const cascadeTarget = CASCADE_FROM[gen.id];
             if (cascadeTarget) {
-                // Cascade rate = owned generators * 0.5 per second
                 const cascadeGain = Math.floor(this.owned[gen.id] * 0.5);
                 if (cascadeGain > 0) {
                     this.owned[cascadeTarget] += cascadeGain;
@@ -341,6 +426,7 @@ class Game {
             transcensions: this.transcensions,
             quantumEssence: this.quantumEssence,
             manualForges: this.manualForges,
+            highestTier: this.highestTier,
             savedAt: Date.now()
         };
         localStorage.setItem('quantumForge', JSON.stringify(data));
@@ -358,6 +444,7 @@ class Game {
             this.transcensions = data.transcensions || 0;
             this.quantumEssence = data.quantumEssence || 0;
             this.manualForges = data.manualForges || 0;
+            this.highestTier = data.highestTier || 0;
             return true;
         } catch (e) {
             console.error('Load failed:', e);
@@ -365,15 +452,23 @@ class Game {
         }
     }
     
-    reset() {
+    reset(includeQE) {
         localStorage.removeItem('quantumForge');
         Object.keys(this.resources).forEach(k => this.resources[k] = 0);
         Object.keys(this.owned).forEach(k => this.owned[k] = 0);
         this.totalQuantaProduced = 0;
-        this.transcensions = 0;
-        this.quantumEssence = 0;
         this.manualForges = 0;
-        this.elements.message.textContent = 'Game reset.';
+        this.highestTier = 0;
+        
+        if (!includeQE) {
+            // Keep QE on transcend
+            this.elements.message.textContent = 'Transcended!';
+        } else {
+            // Full reset
+            this.transcensions = 0;
+            this.quantumEssence = 0;
+            this.elements.message.textContent = 'Game reset.';
+        }
         this.render();
     }
     
@@ -423,6 +518,18 @@ class Game {
         this.elements.qeMult.textContent = `(+${Math.floor((this.getBoost() - 1) * 100)}%)`;
         this.elements.forgeCount.textContent = `${this.manualForges} forges`;
         
+        // Transcendence UI
+        const preview = this.getTranscendPreview();
+        if (preview > 0) {
+            this.elements.transcendSection.style.display = 'block';
+            this.elements.transcendGain.textContent = `+${preview} QE`;
+            this.elements.btnTranscend.disabled = false;
+        } else {
+            this.elements.transcendSection.style.display = 'block';
+            this.elements.transcendGain.textContent = 'Reach Atoms to transcend';
+            this.elements.btnTranscend.disabled = true;
+        }
+        
         // Generators
         this.elements.generatorList.innerHTML = '';
         
@@ -435,11 +542,10 @@ class Game {
             let bonusText = '';
             const cascadeTarget = CASCADE_FROM[gen.id];
             if (cascadeTarget && this.owned[gen.id] > 0) {
-                const cascadeRate = this.getResourceRate(gen.produces) * 0.5;
-                const bonus = Math.floor(cascadeRate);
-                if (bonus > 0) {
+                const cascadeRate = this.owned[gen.id] * 0.5;
+                if (cascadeRate >= 1) {
                     const cascadeGen = GENERATORS.find(g => g.id === cascadeTarget);
-                    bonusText = ` (+${this.format(bonus)}/s ${cascadeGen.name.replace(' Generator','').replace(' Accelerator','').replace(' Forge','').replace(' Assembler','').replace(' Reactor','').replace(' Chamber','').replace(' Engine','').replace(' Condenser','').replace(' Gateway','')} cascade)`;
+                    bonusText = ` (+${this.format(cascadeRate)}/s cascade)`;
                 }
             }
             
