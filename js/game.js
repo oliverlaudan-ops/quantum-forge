@@ -356,12 +356,28 @@ class Game {
         return Math.max(1, score);
     }
     
+    // Update highest tier reached based on current resources
+    updateHighestTier() {
+        if (this.resources.beyond >= 1) this.highestTier = 10;
+        else if (this.resources.universe >= 1) this.highestTier = 9;
+        else if (this.resources.galaxies >= 1) this.highestTier = 8;
+        else if (this.resources.civilizations >= 1) this.highestTier = 7;
+        else if (this.resources.organisms >= 1) this.highestTier = 6;
+        else if (this.resources.cells >= 1) this.highestTier = 5;
+        else if (this.resources.molecules >= 1) this.highestTier = 4;
+        else if (this.resources.atoms >= 1) this.highestTier = 3;
+        else if (this.resources.particles >= 1) this.highestTier = 2;
+        else this.highestTier = 1;
+    }
+    
     canTranscend() {
         // Can transcend if you reached at least Atoms (tier 3)
+        this.updateHighestTier();
         return this.highestTier >= 3 && this.resources.atoms >= 1;
     }
     
     getTranscendPreview() {
+        this.updateHighestTier();
         if (!this.canTranscend()) return 0;
         return this.calculateTranscendPoints();
     }
@@ -403,6 +419,8 @@ class Game {
         this.resources.beyond += this.getResourceRate('beyond');
         
         this.totalQuantaProduced += this.getQuantaRate();
+        
+        this.updateHighestTier();
         
         // Cascade: each generator produces the one below it
         GENERATORS.forEach(gen => {
