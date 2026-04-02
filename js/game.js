@@ -687,7 +687,7 @@ class Game {
                         <div class="generator-desc">${upgrade.description}</div>
                     </div>
                     <div class="generator-stats">
-                        <div class="generator-owned">Owned: ${owned}</div>
+                        <div class="generator-owned">Owned: ${this.format(owned)}</div>
                         <div class="generator-cost">Cost: ${this.format(cost)} RP</div>
                     </div>
                 `;
@@ -735,7 +735,7 @@ class Game {
                     <div class="generator-desc">${gen.description}</div>
                 </div>
                 <div class="generator-stats">
-                    <div class="generator-owned">Owned: ${owned}${bonusText}</div>
+                    <div class="generator-owned">Owned: ${this.format(owned)}${bonusText}</div>
                     <div class="generator-cost ${affordable ? 'affordable' : ''}">Cost: ${this.format(cost)} Quanta</div>
                 </div>
             `;
