@@ -54,7 +54,7 @@ const GENERATORS = [
         name: 'Quantum Foam Generator',
         description: 'Harvests energy from the quantum foam',
         layer: 0,
-        baseCost: 10,
+        baseCost: 5,
         costMultiplier: 1.12,
         baseProduction: 1,
         produces: 'quanta'
@@ -485,7 +485,7 @@ class Game {
         GENERATORS.forEach(gen => {
             const cascadeTarget = CASCADE_FROM[gen.id];
             if (cascadeTarget) {
-                const cascadeGain = Math.floor(this.owned[gen.id] * 0.5);
+                const cascadeGain = Math.floor(this.owned[gen.id] * 0.75);
                 if (cascadeGain > 0) {
                     this.owned[cascadeTarget] += cascadeGain;
                 }
