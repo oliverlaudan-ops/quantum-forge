@@ -662,7 +662,7 @@ class Game {
         this.elements.totalQuanta.textContent = this.format(this.totalQuantaProduced);
         this.elements.transcensions.textContent = this.transcensions;
         this.elements.qe.textContent = this.format(this.quantumEssence);
-        this.elements.qeMult.textContent = `(+${Math.floor((this.getBoost() - 1) * 100)}%)`;
+        this.elements.qeMult.textContent = `(+${this.format(Math.floor((this.getBoost() - 1) * 100))}%)`;
         this.elements.forgeCount.textContent = `${this.manualForges} forges`;
         
         // Research Points display
