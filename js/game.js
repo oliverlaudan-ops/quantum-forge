@@ -599,7 +599,7 @@ class Game {
         // Keep RP and upgrades on transcend (they persist)
         // Only reset on full wipe
         if (!includeQE) {
-            // Keep QE, RP, upgrades on transcend
+            // Keep QE, RP, upgrades on transcend - don't save yet
             this.elements.message.textContent = 'Transcended!';
         } else {
             // Full reset
@@ -615,6 +615,7 @@ class Game {
             };
             Object.keys(this.upgradeOwned).forEach(k => this.upgradeOwned[k] = 0);
             this.elements.message.textContent = 'Game reset.';
+            this.save();
         }
         this.render();
     }
