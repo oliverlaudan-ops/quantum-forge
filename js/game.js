@@ -451,7 +451,7 @@ class Game {
         // Reset progress but keep QE, RP, and upgrades
         this.reset(false);
         
-        this.elements.message.textContent = `Transcended! +${gain} QE, +${rpGain} RP.`;
+        this.elements.message.textContent = `Transcended! +${this.format(gain)} QE, +${this.format(rpGain)} RP.`;
         this.save();
         this.render();
     }
@@ -700,7 +700,7 @@ class Game {
         const preview = this.getTranscendPreview();
         if (preview > 0) {
             this.elements.transcendSection.style.display = 'block';
-            this.elements.transcendGain.textContent = `+${preview} QE`;
+            this.elements.transcendGain.textContent = `+${this.format(preview)} QE`;
             this.elements.btnTranscend.disabled = false;
         } else {
             this.elements.transcendSection.style.display = 'block';
