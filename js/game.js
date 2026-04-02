@@ -256,7 +256,9 @@ class Game {
             btnForge: document.getElementById('btn-forge'),
             btnSave: document.getElementById('btn-save'),
             btnReset: document.getElementById('btn-reset'),
-            message: document.getElementById('message')
+            message: document.getElementById('message'),
+            rp: document.getElementById('rp'),
+            upgradeList: document.getElementById('upgrade-list')
         };
         
         const loaded = this.load();
