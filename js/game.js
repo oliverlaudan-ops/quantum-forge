@@ -621,7 +621,8 @@ class Game {
     
     format(n) {
         if (n < 1000) return Math.floor(n).toString();
-        const suffixes = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc'];
+        if (n >= 1e15) return n.toExponential(2);
+        const suffixes = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
         const tier = Math.min(Math.floor(Math.log10(n) / 3), suffixes.length - 1);
         return (n / Math.pow(1000, tier)).toFixed(1) + suffixes[tier];
     }
