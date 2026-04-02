@@ -56,7 +56,7 @@ const GENERATORS = [
         layer: 0,
         baseCost: 5,
         costMultiplier: 1.12,
-        baseProduction: 1,
+        baseProduction: 5,
         produces: 'quanta'
     },
     {
@@ -66,7 +66,7 @@ const GENERATORS = [
         layer: 1,
         baseCost: 25,
         costMultiplier: 1.12,
-        baseProduction: 1,
+        baseProduction: 5,
         produces: 'particles'
     },
     {
@@ -76,7 +76,7 @@ const GENERATORS = [
         layer: 2,
         baseCost: 75,
         costMultiplier: 1.12,
-        baseProduction: 1,
+        baseProduction: 5,
         produces: 'atoms'
     },
     {
@@ -86,7 +86,7 @@ const GENERATORS = [
         layer: 3,
         baseCost: 200,
         costMultiplier: 1.12,
-        baseProduction: 1,
+        baseProduction: 5,
         produces: 'molecules'
     },
     {
@@ -96,7 +96,7 @@ const GENERATORS = [
         layer: 4,
         baseCost: 500,
         costMultiplier: 1.12,
-        baseProduction: 1,
+        baseProduction: 5,
         produces: 'cells'
     },
     {
@@ -106,7 +106,7 @@ const GENERATORS = [
         layer: 5,
         baseCost: 1500,
         costMultiplier: 1.12,
-        baseProduction: 1,
+        baseProduction: 5,
         produces: 'organisms'
     },
     {
@@ -116,7 +116,7 @@ const GENERATORS = [
         layer: 6,
         baseCost: 5000,
         costMultiplier: 1.12,
-        baseProduction: 1,
+        baseProduction: 5,
         produces: 'civilizations'
     },
     {
@@ -126,7 +126,7 @@ const GENERATORS = [
         layer: 7,
         baseCost: 20000,
         costMultiplier: 1.12,
-        baseProduction: 1,
+        baseProduction: 5,
         produces: 'galaxies'
     },
     {
@@ -136,7 +136,7 @@ const GENERATORS = [
         layer: 8,
         baseCost: 100000,
         costMultiplier: 1.12,
-        baseProduction: 1,
+        baseProduction: 5,
         produces: 'universe'
     },
     {
@@ -146,7 +146,7 @@ const GENERATORS = [
         layer: 9,
         baseCost: 500000,
         costMultiplier: 1.12,
-        baseProduction: 1,
+        baseProduction: 5,
         produces: 'beyond'
     }
 ];
@@ -290,7 +290,7 @@ class Game {
     }
     
     getBoost() {
-        return 1 + (this.quantumEssence * 0.1);
+        return 1 + (this.quantumEssence * 0.15);
     }
     
     getCost(genId) {
@@ -445,7 +445,7 @@ class Game {
         
         // Award Research Points based on transcensions count
         // More RP for harder prestiges
-        const rpGain = Math.max(1, Math.floor(this.transcensions * 0.5));
+        const rpGain = Math.max(1, Math.floor(gain / 2));
         this.researchPoints += rpGain;
         
         // Reset progress but keep QE, RP, and upgrades
