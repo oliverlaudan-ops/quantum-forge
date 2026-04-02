@@ -452,7 +452,6 @@ class Game {
         this.reset(false);
         
         this.elements.message.textContent = `Transcended! +${this.format(gain)} QE, +${this.format(rpGain)} RP.`;
-        this.save();
         this.render();
     }
     
