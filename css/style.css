@@ -288,6 +288,32 @@ button:hover {
     font-size: 0.75rem;
 }
 
+#upgrades {
+    background: var(--bg-card);
+    border: 1px solid #1a1a25;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+#upgrades h3 {
+    color: var(--energy);
+    text-align: center;
+    margin-bottom: 12px;
+    font-weight: normal;
+    letter-spacing: 2px;
+    font-size: 0.85rem;
+}
+
+.upgrade {
+    border-color: var(--energy) !important;
+}
+
+.upgrade.affordable {
+    border-color: #00ff88 !important;
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.3) !important;
+}
+
 footer {
     text-align: center;
     margin-top: 25px;

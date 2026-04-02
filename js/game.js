@@ -1,4 +1,40 @@
 // Game Configuration
+// Meta-Upgrades definition (Phase 1)
+const META_UPGRADES = [
+    {
+        id: 'gen_mult',
+        name: 'Generator Multiplier',
+        description: 'Double all generator production',
+        baseCost: 10,
+        costMultiplier: 2,
+        effect: (game) => { game.upgrades.genMult = (game.upgrades.genMult || 1) * 2; }
+    },
+    {
+        id: 'forge_eff',
+        name: 'Forge Efficiency',
+        description: 'Each forge produces 10x more',
+        baseCost: 5,
+        costMultiplier: 2,
+        effect: (game) => { game.upgrades.forgeMult = (game.upgrades.forgeMult || 1) * 10; }
+    },
+    {
+        id: 'auto_buy',
+        name: 'Automation',
+        description: 'Auto-buy 1 generator every 5s (cascades up)',
+        baseCost: 15,
+        costMultiplier: 3,
+        effect: (game) => { game.upgrades.autoBuy = true; game.upgrades.autoBuyTier = (game.upgrades.autoBuyTier || 0) + 1; }
+    },
+    {
+        id: 'transcend_bonus',
+        name: 'Transcendence Bonus',
+        description: '+50% Quantum Essence from prestige',
+        baseCost: 20,
+        costMultiplier: 2.5,
+        effect: (game) => { game.upgrades.transcendBonus = (game.upgrades.transcendBonus || 1) + 0.5; }
+    }
+];
+
 const LAYERS = [
     { id: 0, name: 'Quantum Foam', resource: 'quanta' },
     { id: 1, name: 'Particles', resource: 'particles' },
@@ -158,6 +194,21 @@ class Game {
         this.transcensions = 0;
         this.quantumEssence = 0;
         this.manualForges = 0;
+        this.researchPoints = 0;
+        
+        // Upgrades state
+        this.upgrades = {
+            genMult: 1,
+            forgeMult: 1,
+            autoBuy: false,
+            autoBuyTier: 0,
+            transcendBonus: 1
+        };
+        this.upgradeOwned = {};
+        META_UPGRADES.forEach(u => this.upgradeOwned[u.id] = 0);
+        
+        this.autoBuyInterval = null;
+        this.autoBuyTickRate = 5000; // 5 seconds
         
         // Track highest tier reached for transcension scoring
         this.highestTier = 0;
@@ -226,11 +277,12 @@ class Game {
         
         this.startTicks();
         this.startAutoSave();
+        this.startAutoBuy();
     }
     
     forge() {
-        this.resources.quanta++;
-        this.totalQuantaProduced++;
+        this.resources.quanta += this.upgrades.forgeMult;
+        this.totalQuantaProduced += this.upgrades.forgeMult;
         this.manualForges++;
         this.render();
     }
@@ -246,7 +298,7 @@ class Game {
     
     getProduction(genId) {
         const gen = GENERATORS.find(g => g.id === genId);
-        return gen.baseProduction * this.owned[genId] * this.getBoost();
+        return gen.baseProduction * this.owned[genId] * this.getBoost() * this.upgrades.genMult;
     }
     
     getQuantaRate() {
@@ -389,10 +441,15 @@ class Game {
         this.quantumEssence += gain;
         this.transcensions++;
         
-        // Reset progress but keep QE
+        // Award Research Points based on transcensions count
+        // More RP for harder prestiges
+        const rpGain = Math.max(1, Math.floor(this.transcensions * 0.5));
+        this.researchPoints += rpGain;
+        
+        // Reset progress but keep QE, RP, and upgrades
         this.reset(false);
         
-        this.elements.message.textContent = `Transcended! +${gain} Quantum Essence.`;
+        this.elements.message.textContent = `Transcended! +${gain} QE, +${rpGain} RP.`;
         this.save();
         this.render();
     }
@@ -436,6 +493,59 @@ class Game {
         this.render();
     }
     
+    // Buy a meta-upgrade with Research Points
+    buyUpgrade(upgradeId) {
+        const upgrade = META_UPGRADES.find(u => u.id === upgradeId);
+        if (!upgrade) return;
+        
+        const cost = this.getUpgradeCost(upgradeId);
+        if (this.researchPoints < cost) return;
+        
+        this.researchPoints -= cost;
+        this.upgradeOwned[upgradeId]++;
+        upgrade.effect(this);
+        
+        this.save();
+        this.render();
+    }
+    
+    getUpgradeCost(upgradeId) {
+        const upgrade = META_UPGRADES.find(u => u.id === upgradeId);
+        return Math.floor(upgrade.baseCost * Math.pow(upgrade.costMultiplier, this.upgradeOwned[upgradeId]));
+    }
+    
+    // Auto-buy: find the highest owned generator and auto-buy 1 tier up
+    autoBuyTick() {
+        if (!this.upgrades.autoBuy) return;
+        
+        // Find highest tier generator owned
+        let highestGen = null;
+        for (let i = GENERATORS.length - 1; i >= 0; i--) {
+            if (this.owned[GENERATORS[i].id] > 0) {
+                highestGen = GENERATORS[i];
+                break;
+            }
+        }
+        
+        if (!highestGen) return; // No generators yet
+        
+        // Find next tier up
+        const tierAhead = this.upgrades.autoBuyTier || 1;
+        const currentIdx = GENERATORS.findIndex(g => g.id === highestGen.id);
+        const targetIdx = Math.min(currentIdx + tierAhead, GENERATORS.length - 1);
+        const targetGen = GENERATORS[targetIdx];
+        
+        if (targetGen && this.resources.quanta >= this.getCost(targetGen.id)) {
+            this.resources.quanta -= this.getCost(targetGen.id);
+            this.owned[targetGen.id]++;
+        }
+    }
+    
+    startAutoBuy() {
+        if (this.autoBuyInterval) clearInterval(this.autoBuyInterval);
+        this.autoBuyInterval = setInterval(() => this.autoBuyTick(), this.autoBuyTickRate);
+    }
+    
     save() {
         const data = {
             resources: this.resources,
@@ -445,6 +555,9 @@ class Game {
             quantumEssence: this.quantumEssence,
             manualForges: this.manualForges,
             highestTier: this.highestTier,
+            researchPoints: this.researchPoints,
+            upgrades: this.upgrades,
+            upgradeOwned: this.upgradeOwned,
             savedAt: Date.now()
         };
         localStorage.setItem('quantumForge', JSON.stringify(data));
@@ -463,6 +576,9 @@ class Game {
             this.quantumEssence = data.quantumEssence || 0;
             this.manualForges = data.manualForges || 0;
             this.highestTier = data.highestTier || 0;
+            this.researchPoints = data.researchPoints || 0;
+            this.upgrades = { ...this.upgrades, ...data.upgrades };
+            this.upgradeOwned = { ...this.upgradeOwned, ...data.upgradeOwned };
             return true;
         } catch (e) {
             console.error('Load failed:', e);
@@ -478,13 +594,24 @@ class Game {
         this.manualForges = 0;
         this.highestTier = 0;
         
+        // Keep RP and upgrades on transcend (they persist)
+        // Only reset on full wipe
         if (!includeQE) {
-            // Keep QE on transcend
+            // Keep QE, RP, upgrades on transcend
             this.elements.message.textContent = 'Transcended!';
         } else {
             // Full reset
             this.transcensions = 0;
             this.quantumEssence = 0;
+            this.researchPoints = 0;
+            this.upgrades = {
+                genMult: 1,
+                forgeMult: 1,
+                autoBuy: false,
+                autoBuyTier: 0,
+                transcendBonus: 1
+            };
+            Object.keys(this.upgradeOwned).forEach(k => this.upgradeOwned[k] = 0);
             this.elements.message.textContent = 'Game reset.';
         }
         this.render();
@@ -535,6 +662,37 @@ class Game {
         this.elements.qe.textContent = this.quantumEssence;
         this.elements.qeMult.textContent = `(+${Math.floor((this.getBoost() - 1) * 100)}%)`;
         this.elements.forgeCount.textContent = `${this.manualForges} forges`;
+        
+        // Research Points display
+        if (this.elements.rp) this.elements.rp.textContent = this.format(this.researchPoints);
+        
+        // Meta Upgrades UI
+        if (this.elements.upgradeList) {
+            this.elements.upgradeList.innerHTML = '';
+            META_UPGRADES.forEach(upgrade => {
+                const owned = this.upgradeOwned[upgrade.id] || 0;
+                const cost = this.getUpgradeCost(upgrade.id);
+                const affordable = this.researchPoints >= cost;
+                
+                // Don't show if already maxed (for autoBuy)
+                if (upgrade.id === 'autoBuy' && this.upgrades.autoBuy && owned >= 10) return;
+                
+                const el = document.createElement('div');
+                el.className = `generator upgrade ${affordable ? 'affordable' : ''}`;
+                el.innerHTML = `
+                    <div class="generator-info">
+                        <div class="generator-name">${upgrade.name}</div>
+                        <div class="generator-desc">${upgrade.description}</div>
+                    </div>
+                    <div class="generator-stats">
+                        <div class="generator-owned">Owned: ${owned}</div>
+                        <div class="generator-cost">Cost: ${this.format(cost)} RP</div>
+                    </div>
+                `;
+                el.addEventListener('click', () => this.buyUpgrade(upgrade.id));
+                this.elements.upgradeList.appendChild(el);
+            });
+        }
         
         // Transcendence UI
         const preview = this.getTranscendPreview();
