@@ -1,3 +1,26 @@
+// Skill Tree definition for Phase 2
+const SKILL_TREE = [
+    // Tier 1 - Starter skills (top row)
+    { id: 'quick_start', name: 'Quick Start', desc: '+50% forge efficiency', cost: 1, tier: 1, effect: (g) => { g.upgrades.forgeMult = (g.upgrades.forgeMult || 1) * 1.5; }, requires: [] },
+    { id: 'efficiency_i', name: 'Efficiency I', desc: 'Generators cost 10% less', cost: 1, tier: 1, effect: (g) => { g.upgrades.costReduction = (g.upgrades.costReduction || 0) + 0.1; }, requires: [] },
+    { id: 'cascade_plus', name: 'Cascade+', desc: '+25% cascade rate', cost: 1, tier: 1, effect: (g) => { g.upgrades.cascadeBonus = (g.upgrades.cascadeBonus || 0.75) + 0.25; }, requires: [] },
+    
+    // Tier 2 - Mid skills
+    { id: 'quantum_leap', name: 'Quantum Leap', desc: 'Start with 100 Quanta after transcend', cost: 2, tier: 2, effect: (g) => { g.upgrades.startQuanta = 100; }, requires: ['quick_start'] },
+    { id: 'efficiency_ii', name: 'Efficiency II', desc: 'Generators cost 20% less', cost: 2, tier: 2, effect: (g) => { g.upgrades.costReduction = (g.upgrades.costReduction || 0) + 0.2; }, requires: ['efficiency_i'] },
+    { id: 'auto_forge', name: 'Auto-Forge', desc: 'Forges auto-click once per second', cost: 3, tier: 2, effect: (g) => { g.upgrades.autoForge = true; }, requires: ['quick_start'] },
+    { id: 'rich_start', name: 'Rich Start', desc: 'Start with 10 of each generator', cost: 3, tier: 2, effect: (g) => { g.upgrades.startGenerators = 10; }, requires: ['efficiency_i', 'cascade_plus'] },
+    
+    // Tier 3 - Advanced skills
+    { id: 'quantum_mastery', name: 'Quantum Mastery', desc: '+100% Quantum Essence gain', cost: 5, tier: 3, effect: (g) => { g.upgrades.transcendBonus = (g.upgrades.transcendBonus || 1) + 1; }, requires: ['quantum_leap', 'auto_forge'] },
+    { id: 'efficiency_iii', name: 'Efficiency III', desc: 'Generators cost 30% less', cost: 5, tier: 3, effect: (g) => { g.upgrades.costReduction = (g.upgrades.costReduction || 0) + 0.3; }, requires: ['efficiency_ii'] },
+    { id: 'multi_cascade', name: 'Multi-Cascade', desc: 'Cascade affects 2 tiers up', cost: 4, tier: 3, effect: (g) => { g.upgrades.cascadeTiers = 2; }, requires: ['cascade_plus', 'rich_start'] },
+    
+    // Tier 4 - Ultimate skills
+    { id: 'transcendence_plus', name: 'Transcendence+', desc: '+1 free transcend level', cost: 10, tier: 4, effect: (g) => { g.upgrades.freeTranscendLevels = (g.upgrades.freeTranscendLevels || 0) + 1; }, requires: ['quantum_mastery', 'efficiency_iii'] },
+    { id: 'infinite_potential', name: 'Infinite Potential', desc: 'All production x10', cost: 15, tier: 4, effect: (g) => { g.upgrades.globalMult = (g.upgrades.globalMult || 1) * 10; }, requires: ['multi_cascade'] }
+];
+
 // Game Configuration
 // Meta-Upgrades definition (Phase 1)
 const META_UPGRADES = [
@@ -192,6 +215,7 @@ class Game {
         
         this.totalQuantaProduced = 0;
         this.transcensions = 0;
+        this.transcendPoints = 0; // Points earned on transcend
         this.quantumEssence = 0;
         this.manualForges = 0;
         this.researchPoints = 0;
@@ -202,10 +226,20 @@ class Game {
             forgeMult: 1,
             autoBuy: false,
             autoBuyTier: 0,
-            transcendBonus: 1
+            transcendBonus: 1,
+            costReduction: 0,
+            cascadeBonus: 0.75,
+            cascadeTiers: 1,
+            startQuanta: 0,
+            startGenerators: 0,
+            autoForge: false,
+            globalMult: 1,
+            freeTranscendLevels: 0
         };
         this.upgradeOwned = {};
         META_UPGRADES.forEach(u => this.upgradeOwned[u.id] = 0);
+        this.skillOwned = {};
+        SKILL_TREE.forEach(s => this.skillOwned[s.id] = false);
         
         this.autoBuyInterval = null;
         this.autoBuyTickRate = 5000; // 5 seconds
@@ -258,7 +292,9 @@ class Game {
             btnReset: document.getElementById('btn-reset'),
             message: document.getElementById('message'),
             rp: document.getElementById('rp'),
-            upgradeList: document.getElementById('upgrade-list')
+            tp: document.getElementById('tp'),
+            upgradeList: document.getElementById('upgrade-list'),
+            skillTree: document.getElementById('skill-tree')
         };
         
         const loaded = this.load();
@@ -295,12 +331,14 @@ class Game {
     
     getCost(genId) {
         const gen = GENERATORS.find(g => g.id === genId);
-        return Math.floor(gen.baseCost * Math.pow(gen.costMultiplier, this.owned[genId]));
+        const baseCost = gen.baseCost * Math.pow(gen.costMultiplier, this.owned[genId]);
+        const reduction = this.upgrades.costReduction || 0;
+        return Math.floor(baseCost * (1 - reduction));
     }
     
     getProduction(genId) {
         const gen = GENERATORS.find(g => g.id === genId);
-        return gen.baseProduction * this.owned[genId] * this.getBoost() * this.upgrades.genMult;
+        return gen.baseProduction * this.owned[genId] * this.getBoost() * this.upgrades.genMult * this.upgrades.globalMult;
     }
     
     getQuantaRate() {
@@ -443,16 +481,34 @@ class Game {
         this.quantumEssence += gain;
         this.transcensions++;
         
-        // Award Research Points based on transcensions count
-        // More RP for harder prestiges
+        // Award Transcend Points (TP) based on highest tier reached
+        const tpGain = Math.max(1, Math.floor(this.highestTier / 2));
+        this.transcendPoints += tpGain;
+        
+        // Award Research Points based on QE gain
         const rpGain = Math.max(1, Math.floor(gain / 2));
         this.researchPoints += rpGain;
         
-        // Reset progress but keep QE, RP, and upgrades
-        this.reset(false);
+        // Reset progress but keep QE, RP, TP, skills and upgrades
+        this.reset(false, true);
         
-        this.elements.message.textContent = `Transcended! +${this.format(gain)} QE, +${this.format(rpGain)} RP.`;
+        // Apply start bonuses
+        this.applyStartBonuses();
+        
+        this.elements.message.textContent = `Transcended! +${this.format(gain)} QE, +${tpGain} TP, +${this.format(rpGain)} RP.`;
+        this.save();
         this.render();
+    }
+    
+    applyStartBonuses() {
+        if (this.upgrades.startQuanta > 0) {
+            this.resources.quanta += this.upgrades.startQuanta;
+        }
+        if (this.upgrades.startGenerators > 0) {
+            GENERATORS.forEach(gen => {
+                this.owned[gen.id] += this.upgrades.startGenerators;
+            });
+        }
     }
     
     buyGenerator(genId) {
@@ -484,7 +540,8 @@ class Game {
         GENERATORS.forEach(gen => {
             const cascadeTarget = CASCADE_FROM[gen.id];
             if (cascadeTarget) {
-                const cascadeGain = Math.floor(this.owned[gen.id] * 0.75);
+                const cascadeRate = this.upgrades.cascadeBonus || 0.75;
+                const cascadeGain = Math.floor(this.owned[gen.id] * cascadeRate);
                 if (cascadeGain > 0) {
                     this.owned[cascadeTarget] += cascadeGain;
                 }
@@ -513,6 +570,32 @@ class Game {
     getUpgradeCost(upgradeId) {
         const upgrade = META_UPGRADES.find(u => u.id === upgradeId);
         return Math.floor(upgrade.baseCost * Math.pow(upgrade.costMultiplier, this.upgradeOwned[upgradeId]));
+    }
+    
+    // Buy a skill from the skill tree
+    buySkill(skillId) {
+        const skill = SKILL_TREE.find(s => s.id === skillId);
+        if (!skill) return;
+        if (this.skillOwned[skillId]) return; // Already owned
+        if (this.transcendPoints < skill.cost) return; // Not enough TP
+        
+        // Check requirements
+        const canBuy = skill.requires.every(reqId => this.skillOwned[reqId]);
+        if (!canBuy) return;
+        
+        this.transcendPoints -= skill.cost;
+        this.skillOwned[skillId] = true;
+        skill.effect(this);
+        
+        this.save();
+        this.render();
+    }
+    
+    canBuySkill(skillId) {
+        const skill = SKILL_TREE.find(s => s.id === skillId);
+        if (!skill || this.skillOwned[skillId]) return false;
+        if (this.transcendPoints < skill.cost) return false;
+        return skill.requires.every(reqId => this.skillOwned[reqId]);
     }
     
     // Auto-buy: find the highest owned generator and auto-buy 1 tier up
@@ -553,12 +636,14 @@ class Game {
             owned: this.owned,
             totalQuantaProduced: this.totalQuantaProduced,
             transcensions: this.transcensions,
+            transcendPoints: this.transcendPoints,
             quantumEssence: this.quantumEssence,
             manualForges: this.manualForges,
             highestTier: this.highestTier,
             researchPoints: this.researchPoints,
             upgrades: this.upgrades,
             upgradeOwned: this.upgradeOwned,
+            skillOwned: this.skillOwned,
             savedAt: Date.now()
         };
         localStorage.setItem('quantumForge', JSON.stringify(data));
@@ -574,12 +659,14 @@ class Game {
             this.owned = { ...this.owned, ...data.owned };
             this.totalQuantaProduced = data.totalQuantaProduced || 0;
             this.transcensions = data.transcensions || 0;
+            this.transcendPoints = data.transcendPoints || 0;
             this.quantumEssence = data.quantumEssence || 0;
             this.manualForges = data.manualForges || 0;
             this.highestTier = data.highestTier || 0;
             this.researchPoints = data.researchPoints || 0;
             this.upgrades = { ...this.upgrades, ...data.upgrades };
             this.upgradeOwned = { ...this.upgradeOwned, ...data.upgradeOwned };
+            this.skillOwned = { ...this.skillOwned, ...data.skillOwned };
             return true;
         } catch (e) {
             console.error('Load failed:', e);
@@ -587,7 +674,7 @@ class Game {
         }
     }
     
-    reset(includeQE) {
+    reset(includeQE, keepTranscendPoints = false) {
         localStorage.removeItem('quantumForge');
         Object.keys(this.resources).forEach(k => this.resources[k] = 0);
         Object.keys(this.owned).forEach(k => this.owned[k] = 0);
@@ -595,14 +682,15 @@ class Game {
         this.manualForges = 0;
         this.highestTier = 0;
         
-        // Keep RP and upgrades on transcend (they persist)
+        // Keep RP, TP, skills and upgrades on transcend (they persist)
         // Only reset on full wipe
         if (!includeQE) {
-            // Keep QE, RP, upgrades on transcend - don't save yet
+            // Keep QE, RP, TP, skills, upgrades on transcend - don't save yet
             this.elements.message.textContent = 'Transcended!';
         } else {
             // Full reset
             this.transcensions = 0;
+            this.transcendPoints = 0;
             this.quantumEssence = 0;
             this.researchPoints = 0;
             this.upgrades = {
@@ -610,9 +698,18 @@ class Game {
                 forgeMult: 1,
                 autoBuy: false,
                 autoBuyTier: 0,
-                transcendBonus: 1
+                transcendBonus: 1,
+                costReduction: 0,
+                cascadeBonus: 0.75,
+                cascadeTiers: 1,
+                startQuanta: 0,
+                startGenerators: 0,
+                autoForge: false,
+                globalMult: 1,
+                freeTranscendLevels: 0
             };
             Object.keys(this.upgradeOwned).forEach(k => this.upgradeOwned[k] = 0);
+            Object.keys(this.skillOwned).forEach(k => this.skillOwned[k] = false);
             this.elements.message.textContent = 'Game reset.';
             this.save();
         }
@@ -668,6 +765,47 @@ class Game {
         
         // Research Points display
         if (this.elements.rp) this.elements.rp.textContent = this.format(this.researchPoints);
+        
+        // Transcend Points display
+        if (this.elements.tp) this.elements.tp.textContent = this.format(this.transcendPoints);
+        
+        // Skill Tree UI
+        if (this.elements.skillTree) {
+            this.elements.skillTree.innerHTML = '';
+            
+            // Group skills by tier
+            const tiers = {};
+            SKILL_TREE.forEach(skill => {
+                if (!tiers[skill.tier]) tiers[skill.tier] = [];
+                tiers[skill.tier].push(skill);
+            });
+            
+            Object.keys(tiers).sort().forEach(tier => {
+                const tierDiv = document.createElement('div');
+                tierDiv.className = 'skill-tier';
+                tierDiv.innerHTML = `<div class="skill-tier-label">Tier ${tier}</div>`;
+                
+                tiers[tier].forEach(skill => {
+                    const owned = this.skillOwned[skill.id];
+                    const canBuy = this.canBuySkill(skill.id);
+                    const canAfford = this.transcendPoints >= skill.cost;
+                    
+                    const skillDiv = document.createElement('div');
+                    skillDiv.className = `skill ${owned ? 'owned' : ''} ${canBuy ? 'available' : 'locked'}`;
+                    skillDiv.innerHTML = `
+                        <div class="skill-name">${skill.name}${owned ? ' ✓' : ''}</div>
+                        <div class="skill-desc">${skill.desc}</div>
+                        <div class="skill-cost">${owned ? 'Owned' : cost + ' TP'}</div>
+                    `;
+                    if (!owned && canBuy) {
+                        skillDiv.addEventListener('click', () => this.buySkill(skill.id));
+                    }
+                    tierDiv.appendChild(skillDiv);
+                });
+                
+                this.elements.skillTree.appendChild(tierDiv);
+            });
+        }
         
         // Meta Upgrades UI
         if (this.elements.upgradeList) {
