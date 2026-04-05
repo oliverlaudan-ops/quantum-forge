@@ -785,23 +785,20 @@ class Game {
                 tierDiv.className = 'skill-tier';
                 tierDiv.innerHTML = `<div class="skill-tier-label">Tier ${tier}</div>`;
                 
-                tiers[tier].forEach(skill => {
-                    const owned = this.skillOwned[skill.id];
-                    const canBuy = this.canBuySkill(skill.id);
-                    const canAfford = this.transcendPoints >= skill.cost;
+                tiers[tier].forEach(function(skill) {
+                    var owned = this.skillOwned[skill.id];
+                    var canBuy = this.canBuySkill(skill.id);
+                    var canAfford = this.transcendPoints >= skill.cost;
                     
-                    const skillDiv = document.createElement('div');
-                    skillDiv.className = `skill ${owned ? 'owned' : ''} ${canBuy ? 'available' : 'locked'}`;
-                    skillDiv.innerHTML = `
-                        <div class="skill-name">${skill.name}${owned ? ' ✓' : ''}</div>
-                        <div class="skill-desc">${skill.desc}</div>
-                        <div class="skill-cost">${owned ? 'Owned' : skill.cost + ' TP'}</div>
-                    `;
+                    var skillDiv = document.createElement('div');
+                    skillDiv.className = 'skill' + (owned ? ' owned' : '') + (canBuy ? ' available' : ' locked');
+                    skillDiv.innerHTML = '<div class="skill-name">' + skill.name + (owned ? ' ✓' : '') + '</div><div class="skill-desc">' + skill.desc + '</div><div class="skill-cost">' + (owned ? 'Owned' : skill.cost + ' TP') + '</div>';
                     if (!owned && canBuy) {
-                        skillDiv.addEventListener('click', () => this.buySkill(skill.id));
+                        var skillId = skill.id;
+                        skillDiv.addEventListener('click', function() { this.buySkill(skillId); }.bind(this));
                     }
                     tierDiv.appendChild(skillDiv);
-                });
+                }.bind(this));
                 
                 this.elements.skillTree.appendChild(tierDiv);
             });
