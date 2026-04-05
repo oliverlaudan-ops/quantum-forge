@@ -795,7 +795,7 @@ class Game {
                     skillDiv.innerHTML = `
                         <div class="skill-name">${skill.name}${owned ? ' ✓' : ''}</div>
                         <div class="skill-desc">${skill.desc}</div>
-                        <div class="skill-cost">${owned ? 'Owned' : cost + ' TP'}</div>
+                        <div class="skill-cost">${owned ? 'Owned' : skill.cost + ' TP'}</div>
                     `;
                     if (!owned && canBuy) {
                         skillDiv.addEventListener('click', () => this.buySkill(skill.id));
