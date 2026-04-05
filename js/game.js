@@ -892,6 +892,13 @@ class Game {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+// Start the game - handle both cases (script loaded before or after DOMContentLoaded)
+if (document.readyState === 'complete') {
+    // DOM already loaded, start immediately
     window.game = new Game();
-});
+} else {
+    // Wait for DOMContentLoaded
+    document.addEventListener('DOMContentLoaded', () => {
+        window.game = new Game();
+    });
+}
