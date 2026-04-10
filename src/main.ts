@@ -1,0 +1,1 @@
+console.log("Quantum Forge TS loaded");
