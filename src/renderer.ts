@@ -155,15 +155,14 @@ export class Renderer {
       panels.forEach(p => {
         if (p.dataset.tab === name) {
           p.classList.remove('hidden');
-          p.style.display = '';
         } else {
           p.classList.add('hidden');
-          p.style.display = 'none';
         }
       });
       buttons.forEach(b => b.classList.toggle('active', b.dataset.tabTarget === name));
+      this.render();
     };
-    buttons.forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tabBtn!)));
+    buttons.forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tabTarget!)));
     switchTab('forge');
   }
 
