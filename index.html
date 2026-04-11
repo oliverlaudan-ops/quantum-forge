@@ -13,66 +13,80 @@
             <p class="subtitle">Forge reality. Transcend the forge. Become the smith of existence.</p>
         </header>
 
+        <div id="notification" class="notification hidden"></div>
+
+        <nav id="tab-nav">
+            <button class="tab-btn active" data-tab-target="forge">Forge</button>
+            <button class="tab-btn" data-tab-target="research">Research</button>
+            <button class="tab-btn" data-tab-target="skills">Skills</button>
+        </nav>
+
         <main>
-            <div id="resource-display">
-                <div class="resource-row">
-                    <div class="resource">
-                        <span class="res-name">Quanta:</span>
-                        <span id="quanta">0</span>
-                        <span class="res-rate" id="quanta-rate">(+0/s)</span>
+            <div data-tab="forge">
+                <div id="resource-display">
+                    <div class="resource-row">
+                        <div class="resource">
+                            <span class="res-name">Quanta:</span>
+                            <span id="quanta">0</span>
+                            <span class="res-rate" id="quanta-rate">(+0/s)</span>
+                        </div>
+                    </div>
+                    <div class="resource-row">
+                        <div class="resource"><span class="res-name">Particles:</span><span id="particles">0</span><span class="res-rate" id="particles-rate">(+0/s)</span></div>
+                        <div class="resource"><span class="res-name">Atoms:</span><span id="atoms">0</span><span class="res-rate" id="atoms-rate">(+0/s)</span></div>
+                        <div class="resource"><span class="res-name">Molecules:</span><span id="molecules">0</span><span class="res-rate" id="molecules-rate">(+0/s)</span></div>
+                    </div>
+                    <div class="resource-row">
+                        <div class="resource"><span class="res-name">Cells:</span><span id="cells">0</span><span class="res-rate" id="cells-rate">(+0/s)</span></div>
+                        <div class="resource"><span class="res-name">Organisms:</span><span id="organisms">0</span><span class="res-rate" id="organisms-rate">(+0/s)</span></div>
+                        <div class="resource"><span class="res-name">Civilizations:</span><span id="civilizations">0</span><span class="res-rate" id="civilizations-rate">(+0/s)</span></div>
+                    </div>
+                    <div class="resource-row">
+                        <div class="resource"><span class="res-name">Galaxies:</span><span id="galaxies">0</span><span class="res-rate" id="galaxies-rate">(+0/s)</span></div>
+                        <div class="resource"><span class="res-name">Universe:</span><span id="universe">0</span><span class="res-rate" id="universe-rate">(+0/s)</span></div>
+                        <div class="resource"><span class="res-name">Beyond:</span><span id="beyond">0</span><span class="res-rate" id="beyond-rate">(+0/s)</span></div>
+                    </div>
+                    <div id="forge-section">
+                        <button id="btn-forge">FORGE</button>
+                        <span id="forge-count">0 forges</span>
+                    </div>
+                    <div id="transcend-section">
+                        <button id="btn-transcend" disabled>TRANSCEND</button>
+                        <span id="transcend-gain">Reach Atoms to transcend</span>
                     </div>
                 </div>
-                <div class="resource-row">
-                    <div class="resource"><span class="res-name">Particles:</span><span id="particles">0</span><span class="res-rate" id="particles-rate">(+0/s)</span></div>
-                    <div class="resource"><span class="res-name">Atoms:</span><span id="atoms">0</span><span class="res-rate" id="atoms-rate">(+0/s)</span></div>
-                    <div class="resource"><span class="res-name">Molecules:</span><span id="molecules">0</span><span class="res-rate" id="molecules-rate">(+0/s)</span></div>
+
+                <div id="generators">
+                    <h3>Generators</h3>
+                    <div id="generator-list"></div>
                 </div>
-                <div class="resource-row">
-                    <div class="resource"><span class="res-name">Cells:</span><span id="cells">0</span><span class="res-rate" id="cells-rate">(+0/s)</span></div>
-                    <div class="resource"><span class="res-name">Organisms:</span><span id="organisms">0</span><span class="res-rate" id="organisms-rate">(+0/s)</span></div>
-                    <div class="resource"><span class="res-name">Civilizations:</span><span id="civilizations">0</span><span class="res-rate" id="civilizations-rate">(+0/s)</span></div>
-                </div>
-                <div class="resource-row">
-                    <div class="resource"><span class="res-name">Galaxies:</span><span id="galaxies">0</span><span class="res-rate" id="galaxies-rate">(+0/s)</span></div>
-                    <div class="resource"><span class="res-name">Universe:</span><span id="universe">0</span><span class="res-rate" id="universe-rate">(+0/s)</span></div>
-                    <div class="resource"><span class="res-name">Beyond:</span><span id="beyond">0</span><span class="res-rate" id="beyond-rate">(+0/s)</span></div>
-                </div>
-                <div id="forge-section">
-                    <button id="btn-forge">FORGE</button>
-                    <span id="forge-count">0 forges</span>
-                </div>
-                <div id="transcend-section">
-                    <button id="btn-transcend" disabled>TRANSCEND</button>
-                    <span id="transcend-gain">Reach Atoms to transcend</span>
+
+                <div id="actions">
+                    <button id="btn-save">Save</button>
+                    <button id="btn-reset">Reset</button>
                 </div>
             </div>
 
-            <div id="generators">
-                <h3>Generators</h3>
-                <div id="generator-list"></div>
+            <div data-tab="research" class="hidden">
+                <div id="stats">
+                    <div class="stat"><span class="label">Total Quanta:</span><span id="total-quanta">0</span></div>
+                    <div class="stat"><span class="label">Transcensions:</span><span id="transcensions">0</span></div>
+                    <div class="stat"><span class="label">Quantum Essence:</span><span id="qe">0</span><span id="qe-mult">(+0%)</span></div>
+                    <div class="stat"><span class="label">Research Points:</span><span id="rp">0</span></div>
+                    <div class="stat"><span class="label">Transcend Points:</span><span id="tp">0</span></div>
+                </div>
+
+                <div id="upgrades">
+                    <h3>Meta Research (Cost: RP)</h3>
+                    <div id="upgrade-list"></div>
+                </div>
             </div>
 
-            <div id="actions">
-                <button id="btn-save">Save</button>
-                <button id="btn-reset">Reset</button>
-            </div>
-
-            <div id="stats">
-                <div class="stat"><span class="label">Total Quanta:</span><span id="total-quanta">0</span></div>
-                <div class="stat"><span class="label">Transcensions:</span><span id="transcensions">0</span></div>
-                <div class="stat"><span class="label">Quantum Essence:</span><span id="qe">0</span><span id="qe-mult">(+0%)</span></div>
-                <div class="stat"><span class="label">Research Points:</span><span id="rp">0</span></div>
-                <div class="stat"><span class="label">Transcend Points:</span><span id="tp">0</span></div>
-            </div>
-
-            <div id="upgrades">
-                <h3>Meta Research (Cost: RP)</h3>
-                <div id="upgrade-list"></div>
-            </div>
-
-            <div id="skill-tree-section">
-                <h3>Skill Tree (Cost: TP)</h3>
-                <div id="skill-tree"></div>
+            <div data-tab="skills" class="hidden">
+                <div id="skill-tree-section">
+                    <h3>Skill Tree (Cost: TP)</h3>
+                    <div id="skill-tree"></div>
+                </div>
             </div>
         </main>
 
