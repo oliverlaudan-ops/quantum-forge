@@ -23,9 +23,11 @@ export class Renderer {
       'civilizations','civilizations-rate','galaxies','galaxies-rate','universe','universe-rate',
       'beyond','beyond-rate','total-quanta','transcensions','qe','qe-mult','forge-count',
       'transcend-section','transcend-gain','btn-transcend','generator-list',
-      'btn-forge','btn-save','btn-reset','message','rp','tp','upgrade-list','skill-tree'
+      'btn-forge','btn-save','btn-reset','message','rp','tp','upgrade-list','skill-tree',
+      'notification'
     ];
     for (const id of ids) this.el[id] = document.getElementById(id);
+    this.initTabs();
   }
 
   render(): void {
@@ -59,6 +61,15 @@ export class Renderer {
       this.el['btn-transcend'].disabled = !this.prestige.canTranscend();
     }
 
+    // Transcend progress bar
+    if (this.prestige.canTranscend()) {
+      const progressEl = document.getElementById('transcend-progress-bar');
+      if (progressEl) {
+        const pct = Math.min(100, (s.highestTier / 10) * 100);
+        progressEl.style.width = pct + '%';
+      }
+    }
+
     // Generators
     this.renderGenerators();
     // Upgrades
@@ -82,7 +93,7 @@ export class Renderer {
         if (cascadeRate >= 1) bonusText = ` (+${format(cascadeRate)}/s cascade)`;
       }
       const div = document.createElement('div');
-      div.className = 'generator';
+      div.className = `generator gen-layer-${gen.layer}`;
       div.innerHTML = `<div class="generator-info"><div class="generator-name">${gen.name}</div><div class="generator-desc">${gen.description}</div></div><div class="generator-stats"><div class="generator-owned">Owned: ${format(owned)}${bonusText}</div><div class="generator-cost${affordable ? ' affordable' : ''}">Cost: ${format(cost)} Quanta</div></div>`;
       const genId = gen.id;
       div.addEventListener('click', () => { this.engine.buyGenerator(genId); this.render(); });
@@ -135,6 +146,33 @@ export class Renderer {
       }
       container.appendChild(tierDiv);
     }
+  }
+
+  private initTabs(): void {
+    const panels = document.querySelectorAll<HTMLElement>('[data-tab]');
+    const buttons = document.querySelectorAll<HTMLElement>('[data-tab-target]');
+    const switchTab = (name: string) => {
+      panels.forEach(p => {
+        if (p.dataset.tab === name) {
+          p.classList.remove('hidden');
+          p.style.display = '';
+        } else {
+          p.classList.add('hidden');
+          p.style.display = 'none';
+        }
+      });
+      buttons.forEach(b => b.classList.toggle('active', b.dataset.tabTarget === name));
+    };
+    buttons.forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tabBtn!)));
+    switchTab('forge');
+  }
+
+  showNotification(text: string): void {
+    const el = this.el['notification'];
+    if (!el) return;
+    el.textContent = text;
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 3000);
   }
 
   private setText(id: string, text: string): void {

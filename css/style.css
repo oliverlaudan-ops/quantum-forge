@@ -408,3 +408,137 @@ footer {
     color: var(--accent);
     font-size: 0.75rem;
 }
+
+/* === Tab Navigation === */
+#tab-nav {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin-bottom: 20px;
+    background: var(--bg-card);
+    border-radius: 8px;
+    padding: 4px;
+    border: 1px solid #1a1a25;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 10px 20px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    color: var(--text-dim);
+    font-family: inherit;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    text-transform: uppercase;
+}
+
+.tab-btn:hover {
+    color: var(--accent-glow);
+    background: rgba(124, 92, 231, 0.1);
+}
+
+.tab-btn.active {
+    color: var(--accent-glow);
+    background: rgba(124, 92, 231, 0.15);
+    border-color: var(--accent);
+    box-shadow: 0 0 12px rgba(124, 92, 231, 0.3);
+}
+
+/* Tab content panels */
+[data-tab] {
+    animation: fadeIn 0.3s ease;
+}
+
+[data-tab].hidden {
+    display: none;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* === Notification Toast === */
+.notification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-card);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 12px 24px;
+    color: var(--accent-glow);
+    font-size: 0.9rem;
+    z-index: 1000;
+    box-shadow: 0 0 20px rgba(124, 92, 231, 0.4);
+    animation: slideDown 0.3s ease;
+    pointer-events: none;
+}
+
+.notification.hidden {
+    display: none;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* === Forge Button Pulse === */
+@keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 20px rgba(124, 92, 231, 0.4); }
+    50% { box-shadow: 0 0 35px rgba(124, 92, 231, 0.7); }
+}
+
+#btn-forge {
+    animation: pulseGlow 3s ease-in-out infinite;
+}
+
+/* === Generator Layer Colors === */
+.gen-layer-0 { border-left: 3px solid #00d4ff; }
+.gen-layer-1 { border-left: 3px solid #00b8d4; }
+.gen-layer-2 { border-left: 3px solid #7c5ce7; }
+.gen-layer-3 { border-left: 3px solid #9d7cff; }
+.gen-layer-4 { border-left: 3px solid #00ff88; }
+.gen-layer-5 { border-left: 3px solid #ff6b9d; }
+.gen-layer-6 { border-left: 3px solid #ff9f43; }
+.gen-layer-7 { border-left: 3px solid #ffd32a; }
+.gen-layer-8 { border-left: 3px solid #ff6b6b; }
+.gen-layer-9 { border-left: 3px solid #e056a0; }
+
+/* === Transcend Progress Bar === */
+#transcend-progress {
+    height: 4px;
+    background: #1a1a25;
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+}
+
+#transcend-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #00d4ff, #7c5ce7, #ff6b6b);
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.5s ease;
+}
+
+/* === Mobile Responsive === */
+@media (max-width: 600px) {
+    body { padding: 10px; }
+    h1 { font-size: 1.6rem; }
+    .resource-row { gap: 10px; }
+    .resource { font-size: 0.8rem; }
+    .tab-btn { padding: 8px 12px; font-size: 0.75rem; }
+    .generator { flex-direction: column; gap: 6px; }
+    .generator-stats { text-align: left; }
+    .skill { min-width: 100px; }
+    #btn-forge { padding: 12px 30px; font-size: 1rem; }
+    #stats { gap: 8px; }
+    .stat { font-size: 0.75rem; padding: 6px 10px; }
+}

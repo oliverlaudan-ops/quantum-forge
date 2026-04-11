@@ -36,14 +36,14 @@ function main() {
 
   if (saveBtn) saveBtn.addEventListener('click', () => {
     localStorage.setItem(SAVE_KEY, JSON.stringify(state.save()));
-    if (msg) msg.textContent = 'Game saved.';
+    renderer.showNotification('Game saved.');
   });
 
   if (resetBtn) resetBtn.addEventListener('click', () => {
     if (confirm('Reset ALL progress including Quantum Essence?')) {
       state.reset(true);
       localStorage.removeItem(SAVE_KEY);
-      if (msg) msg.textContent = 'Game reset.';
+      renderer.showNotification('Game reset.');
       renderer.render();
     }
   });
@@ -52,13 +52,13 @@ function main() {
     const result = prestige.transcend();
     if (result.qeGain > 0) {
       localStorage.setItem(SAVE_KEY, JSON.stringify(state.save()));
-      if (msg) msg.textContent = `Transcended! +${result.qeGain} QE, +${result.tpGain} TP, +${result.rpGain} RP.`;
+      renderer.showNotification(`Transcended! +${result.qeGain} QE, +${result.tpGain} TP, +${result.rpGain} RP.`);
       renderer.render();
     }
   });
 
   // Initial message
-  if (msg) msg.textContent = loaded ? 'Game loaded.' : 'Welcome to Quantum Forge.';
+  renderer.showNotification(loaded ? 'Game loaded.' : 'Welcome to Quantum Forge.');
 
   // Game loop
   setInterval(() => {
