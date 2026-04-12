@@ -50,6 +50,33 @@ export interface Upgrades {
   autoForge: boolean;
   globalMult: number;
   freeTranscendLevels: number;
+  cosmicMultiplier: number;
+}
+
+export interface AscensionUpgrades {
+  cosmicMultiplier: number;
+  transcendBoost: number;
+  ascensionCostMult: number;
+  keepSkills: number;
+}
+
+export interface AscensionData {
+  ascensions: number;
+  ascensionPoints: number;
+  cosmicFragments: number;
+  ascensionUpgrades: AscensionUpgrades;
+  ascensionUpgradeOwned: Record<string, number>;
+  totalQEever: number;
+}
+
+export interface AscensionUpgrade {
+  id: string;
+  name: string;
+  description: string;
+  baseCost: number;
+  costMultiplier: number;
+  maxLevel: number;
+  effect: (game: any) => void;
 }
 
 export interface SaveData {
@@ -65,5 +92,6 @@ export interface SaveData {
   upgrades: Upgrades;
   upgradeOwned: Record<string, number>;
   skillOwned: Record<string, boolean>;
+  ascensionData?: AscensionData;
   savedAt: number;
 }

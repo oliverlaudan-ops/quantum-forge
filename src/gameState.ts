@@ -25,6 +25,7 @@ function defaultUpgrades(): Upgrades {
     autoForge: false,
     globalMult: 1,
     freeTranscendLevels: 0,
+    cosmicMultiplier: 1,
   };
 }
 
