@@ -1,5 +1,5 @@
 import { format, formatRate } from './utils';
-import { GENERATORS, CASCADE_FROM, META_UPGRADES, SKILL_TREE } from './data';
+import { GENERATORS, CASCADE_FROM, META_UPGRADES, SKILL_TREE, ASCENSION_UPGRADES } from './data';
 import { GameState } from './gameState';
 import { GameEngine } from './engine';
 import { PrestigeSystem } from './prestige';
@@ -24,7 +24,8 @@ export class Renderer {
       'beyond','beyond-rate','total-quanta','transcensions','qe','qe-mult','forge-count',
       'transcend-section','transcend-gain','btn-transcend','generator-list',
       'btn-forge','btn-save','btn-reset','message','rp','tp','upgrade-list','skill-tree',
-      'notification'
+      'notification','ascensions','ap','cf','ascend-section','ascend-gain',
+      'btn-ascend','ascension-list','cosmic-mult-display'
     ];
     for (const id of ids) this.el[id] = document.getElementById(id);
     this.initTabs();
@@ -70,12 +71,34 @@ export class Renderer {
       }
     }
 
+    // Ascension stats
+    this.setText('ascensions', String(s.ascensionData.ascensions));
+    this.setText('ap', format(s.ascensionData.ascensionPoints));
+    this.setText('cf', format(s.ascensionData.cosmicFragments));
+    const cosmicMult = s.ascensionData.ascensionUpgrades.cosmicMultiplier;
+    this.setText('cosmic-mult-display', cosmicMult > 1 ? `x${format(cosmicMult)}` : '');
+
+    // Ascend preview
+    if (this.el['ascend-gain']) {
+      if (this.prestige.canAscend()) {
+        const preview = this.prestige.getAscensionPreview();
+        this.el['ascend-gain'].textContent = `+${format(preview.apGain)} AP, +${format(preview.cfGain)} CF`;
+      } else {
+        this.el['ascend-gain'].textContent = 'Reach 5 Transcensions or 100 QE earned';
+      }
+    }
+    if (this.el['btn-ascend'] instanceof HTMLButtonElement) {
+      this.el['btn-ascend'].disabled = !this.prestige.canAscend();
+    }
+
     // Generators
     this.renderGenerators();
     // Upgrades
     this.renderUpgrades();
     // Skill tree
     this.renderSkillTree();
+    // Ascension upgrades
+    this.renderAscensionUpgrades();
   }
 
   private renderGenerators(): void {
@@ -145,6 +168,24 @@ export class Renderer {
         tierDiv.appendChild(div);
       }
       container.appendChild(tierDiv);
+    }
+  }
+
+  private renderAscensionUpgrades(): void {
+    const list = this.el['ascension-list'];
+    if (!list) return;
+    list.innerHTML = '';
+    for (const upg of ASCENSION_UPGRADES) {
+      const owned = this.state.ascensionData.ascensionUpgradeOwned[upg.id] ?? 0;
+      if (owned >= upg.maxLevel) continue;
+      const cost = this.prestige.getAscensionUpgradeCost(upg.id);
+      const affordable = this.state.ascensionData.ascensionPoints >= cost;
+      const div = document.createElement('div');
+      div.className = `generator ascension-upgrade${affordable ? ' affordable' : ''}`;
+      div.innerHTML = `<div class="generator-info"><div class="generator-name">${upg.name}</div><div class="generator-desc">${upg.description}</div></div><div class="generator-stats"><div class="generator-owned">Level: ${owned}/${upg.maxLevel}</div><div class="generator-cost">Cost: ${format(cost)} AP</div></div>`;
+      const uid = upg.id;
+      div.addEventListener('click', () => { this.prestige.buyAscensionUpgrade(uid); this.render(); });
+      list.appendChild(div);
     }
   }
 

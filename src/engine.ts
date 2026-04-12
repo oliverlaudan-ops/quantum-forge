@@ -22,7 +22,7 @@ export class GameEngine {
     if (!gen) return 0;
     const owned = this.state.owned[genId] ?? 0;
     if (owned === 0) return 0;
-    return gen.baseProduction * owned * this.getBoost() * this.state.upgrades.genMult * this.state.upgrades.globalMult;
+    return gen.baseProduction * owned * this.getBoost() * this.state.upgrades.genMult * this.state.upgrades.globalMult * this.state.ascensionData.ascensionUpgrades.cosmicMultiplier;
   }
 
   getResourceRate(resource: string): number {

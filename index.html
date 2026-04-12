@@ -19,6 +19,7 @@
             <button class="tab-btn active" data-tab-target="forge">Forge</button>
             <button class="tab-btn" data-tab-target="research">Research</button>
             <button class="tab-btn" data-tab-target="skills">Skills</button>
+            <button class="tab-btn" data-tab-target="ascension">Ascension</button>
         </nav>
 
         <main>
@@ -87,6 +88,27 @@
                 <div id="skill-tree-section">
                     <h3>Skill Tree (Cost: TP)</h3>
                     <div id="skill-tree"></div>
+                </div>
+            </div>
+
+            <div data-tab="ascension" class="hidden">
+                <div id="ascension-section">
+                    <h3>⚡ Ascension</h3>
+                    <p class="ascension-desc">Reset EVERYTHING — including QE, TP, RP, and Skills — for permanent cosmic power.</p>
+                    <div id="ascension-stats">
+                        <div class="stat"><span class="label">Ascensions:</span><span id="ascensions">0</span></div>
+                        <div class="stat"><span class="label">Ascension Points:</span><span id="ap">0</span></div>
+                        <div class="stat"><span class="label">Cosmic Fragments:</span><span id="cf">0</span></div>
+                        <div class="stat"><span class="label">Cosmic Mult:</span><span id="cosmic-mult-display"></span></div>
+                    </div>
+                    <div id="ascend-section">
+                        <button id="btn-ascend" disabled>⚡ ASCEND</button>
+                        <span id="ascend-gain">Reach 5 Transcensions or 100 QE earned</span>
+                    </div>
+                    <div id="ascension-upgrades">
+                        <h3>Cosmic Upgrades (Cost: AP)</h3>
+                        <div id="ascension-list"></div>
+                    </div>
                 </div>
             </div>
         </main>

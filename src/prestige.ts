@@ -1,5 +1,5 @@
 import { GameState } from './gameState';
-import { LAYERS, META_UPGRADES, SKILL_TREE } from './data';
+import { LAYERS, META_UPGRADES, SKILL_TREE, ASCENSION_UPGRADES } from './data';
 
 const TIER_SCORES: Record<string, number> = {
   beyond: 1000,
@@ -60,6 +60,7 @@ export class PrestigeSystem {
     this.state.quantumEssence += qeGain;
     this.state.transcendPoints += tpGain;
     this.state.researchPoints += rpGain;
+    this.state.ascensionData.totalQEever += qeGain;
     this.state.transcensions += 1;
 
     // Reset resources/owned/progress but keep prestige currency + upgrades + skills
@@ -110,6 +111,52 @@ export class PrestigeSystem {
     this.state.transcendPoints -= skill.cost;
     this.state.skillOwned[skillId] = true;
     skill.effect(this.state);
+    return true;
+  }
+
+  // --- Ascension ---
+
+  canAscend(): boolean {
+    return this.state.ascensionData.totalQEever >= 100 || this.state.transcensions >= 5;
+  }
+
+  calculateAscensionPoints(): number {
+    return Math.max(1, Math.floor(Math.sqrt(this.state.ascensionData.totalQEever) * 0.5) + this.state.transcensions);
+  }
+
+  calculateCosmicFragments(): number {
+    return Math.max(1, Math.floor(this.state.transcensions * 2));
+  }
+
+  getAscensionPreview(): { apGain: number; cfGain: number } {
+    if (!this.canAscend()) return { apGain: 0, cfGain: 0 };
+    return { apGain: this.calculateAscensionPoints(), cfGain: this.calculateCosmicFragments() };
+  }
+
+  ascend(): { apGain: number; cfGain: number } {
+    const apGain = this.calculateAscensionPoints();
+    const cfGain = this.calculateCosmicFragments();
+    this.state.ascend();
+    return { apGain, cfGain };
+  }
+
+  getAscensionUpgradeCost(upgradeId: string): number {
+    const upgrade = ASCENSION_UPGRADES.find(u => u.id === upgradeId);
+    if (!upgrade) return Infinity;
+    const owned = this.state.ascensionData.ascensionUpgradeOwned[upgradeId] ?? 0;
+    return Math.floor(upgrade.baseCost * Math.pow(upgrade.costMultiplier, owned) * (1 - this.state.ascensionData.ascensionUpgrades.ascensionCostMult));
+  }
+
+  buyAscensionUpgrade(upgradeId: string): boolean {
+    const upgrade = ASCENSION_UPGRADES.find(u => u.id === upgradeId);
+    if (!upgrade) return false;
+    const owned = this.state.ascensionData.ascensionUpgradeOwned[upgradeId] ?? 0;
+    if (owned >= upgrade.maxLevel) return false;
+    const cost = this.getAscensionUpgradeCost(upgradeId);
+    if (this.state.ascensionData.ascensionPoints < cost) return false;
+    this.state.ascensionData.ascensionPoints -= cost;
+    this.state.ascensionData.ascensionUpgradeOwned[upgradeId] = owned + 1;
+    upgrade.effect(this.state);
     return true;
   }
 }

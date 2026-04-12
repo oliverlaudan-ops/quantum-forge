@@ -1,5 +1,5 @@
-import type { Resources, Upgrades, SaveData } from './types';
-import { GENERATORS, META_UPGRADES, SKILL_TREE } from './data';
+import type { Resources, Upgrades, SaveData, AscensionData } from './types';
+import { GENERATORS, META_UPGRADES, SKILL_TREE, ASCENSION_UPGRADES } from './data';
 
 const RESOURCE_KEYS: (keyof Resources)[] = [
   'quanta', 'particles', 'atoms', 'molecules', 'cells',
@@ -54,6 +54,19 @@ export class GameState {
   upgrades: Upgrades = defaultUpgrades();
   upgradeOwned: Record<string, number> = defaultUpgradeOwned();
   skillOwned: Record<string, boolean> = defaultSkillOwned();
+  ascensionData: AscensionData = {
+    ascensions: 0,
+    ascensionPoints: 0,
+    cosmicFragments: 0,
+    ascensionUpgrades: {
+      cosmicMultiplier: 1,
+      transcendBoost: 0,
+      ascensionCostMult: 0,
+      keepSkills: 0,
+    },
+    ascensionUpgradeOwned: Object.fromEntries(ASCENSION_UPGRADES.map(u => [u.id, 0])),
+    totalQEever: 0,
+  };
 
   save(): SaveData {
     return {
@@ -69,6 +82,7 @@ export class GameState {
       upgrades: { ...this.upgrades },
       upgradeOwned: { ...this.upgradeOwned },
       skillOwned: { ...this.skillOwned },
+      ascensionData: this.ascensionData,
       savedAt: Date.now(),
     };
   }
@@ -118,6 +132,13 @@ export class GameState {
       }
       this.skillOwned = so;
 
+      // Merge ascensionData with defaults
+      if (data.ascensionData) {
+        this.ascensionData = { ...this.ascensionData, ...data.ascensionData };
+        this.ascensionData.ascensionUpgrades = { ...this.ascensionData.ascensionUpgrades, ...(data.ascensionData.ascensionUpgrades || {}) };
+        this.ascensionData.ascensionUpgradeOwned = { ...this.ascensionData.ascensionUpgradeOwned, ...(data.ascensionData.ascensionUpgradeOwned || {}) };
+      }
+
       return true;
     } catch {
       return false;
@@ -125,6 +146,11 @@ export class GameState {
   }
 
   reset(includeQE: boolean): void {
+    if (!includeQE) {
+      // Track totalQEever before resetting quantumEssence
+      this.ascensionData.totalQEever += this.quantumEssence;
+    }
+
     this.resources = defaultResources();
     this.owned = defaultOwned();
     this.totalQuantaProduced = 0;
@@ -139,7 +165,51 @@ export class GameState {
       this.upgrades = defaultUpgrades();
       this.upgradeOwned = defaultUpgradeOwned();
       this.skillOwned = defaultSkillOwned();
+      // Full reset: also reset ascensionData to defaults
+      this.ascensionData = {
+        ascensions: 0,
+        ascensionPoints: 0,
+        cosmicFragments: 0,
+        ascensionUpgrades: {
+          cosmicMultiplier: 1,
+          transcendBoost: 0,
+          ascensionCostMult: 0,
+          keepSkills: 0,
+        },
+        ascensionUpgradeOwned: Object.fromEntries(ASCENSION_UPGRADES.map(u => [u.id, 0])),
+        totalQEever: 0,
+      };
     }
+  }
+
+  ascend(): { apGain: number; cfGain: number } {
+    // Calculate AP gain based on total QE ever earned and number of transcensions
+    const apGain = Math.max(1, Math.floor(Math.sqrt(this.ascensionData.totalQEever) * 0.5) + this.transcensions);
+    const cfGain = Math.max(1, Math.floor(this.transcensions * 2));
+
+    this.ascensionData.ascensionPoints += apGain;
+    this.ascensionData.cosmicFragments += cfGain;
+    this.ascensionData.ascensions += 1;
+
+    // Full reset including QE, TP, RP, skills, upgrades
+    // BUT keep ascensionData and preserve some skills based on keepSkills upgrade
+    const keptSkills = this.ascensionData.ascensionUpgrades.keepSkills;
+    const savedSkillOwned = { ...this.skillOwned };
+    this.reset(true);
+
+    // Preserve some skills based on keepSkills upgrade
+    if (keptSkills > 0) {
+      const ownedSkillIds = Object.entries(savedSkillOwned)
+        .filter(([, owned]) => owned)
+        .map(([id]) => id);
+      // Randomly pick skills to keep
+      const shuffled = ownedSkillIds.sort(() => Math.random() - 0.5);
+      for (let i = 0; i < Math.min(keptSkills, shuffled.length); i++) {
+        this.skillOwned[shuffled[i]] = true;
+      }
+    }
+
+    return { apGain, cfGain };
   }
 
   applyStartBonuses(): void {

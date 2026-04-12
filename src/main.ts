@@ -27,6 +27,7 @@ function main() {
   const saveBtn = document.getElementById('btn-save');
   const resetBtn = document.getElementById('btn-reset');
   const transcendBtn = document.getElementById('btn-transcend');
+  const ascendBtn = document.getElementById('btn-ascend');
   const msg = document.getElementById('message');
 
   if (forgeBtn) forgeBtn.addEventListener('click', () => {
@@ -55,6 +56,15 @@ function main() {
       renderer.showNotification(`Transcended! +${result.qeGain} QE, +${result.tpGain} TP, +${result.rpGain} RP.`);
       renderer.render();
     }
+  });
+
+  if (ascendBtn) ascendBtn.addEventListener('click', () => {
+    if (!prestige.canAscend()) return;
+    if (!confirm('Ascend? This will reset ALL progress including QE, TP, RP, and Skills!')) return;
+    const result = prestige.ascend();
+    localStorage.setItem(SAVE_KEY, JSON.stringify(state.save()));
+    renderer.showNotification(`Ascended! +${result.apGain} AP, +${result.cfGain} CF`);
+    renderer.render();
   });
 
   // Initial message
