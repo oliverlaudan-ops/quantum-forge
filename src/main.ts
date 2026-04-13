@@ -2,6 +2,7 @@ import { GameState } from './gameState';
 import { GameEngine } from './engine';
 import { PrestigeSystem } from './prestige';
 import { Renderer } from './renderer';
+import { format } from './utils';
 
 const SAVE_KEY = 'quantumForge';
 
@@ -20,6 +21,20 @@ function main() {
     try {
       loaded = state.load(JSON.parse(raw));
     } catch { /* ignore */ }
+  }
+
+  // Offline progress
+  let offlineHours = 0;
+  if (loaded && state.save().savedAt) {
+    const now = Date.now();
+    const lastSave = state.save().savedAt;
+    const elapsedMs = now - lastSave;
+    const elapsedSeconds = Math.floor(elapsedMs / 1000);
+    
+    if (elapsedSeconds > 0) {
+      engine.calculateOfflineProgress(elapsedSeconds);
+      offlineHours = (elapsedSeconds / 3600).toFixed(2);
+    }
   }
 
   // Event handlers
@@ -68,7 +83,13 @@ function main() {
   });
 
   // Initial message
-  renderer.showNotification(loaded ? 'Game loaded.' : 'Welcome to Quantum Forge.');
+  if (offlineHours > 0) {
+    const quantaRate = engine.getQuantaRate();
+    const offlineQuanta = quantaRate * (parseFloat(offlineHours) * 3600) * 0.5;
+    renderer.showNotification(`Welcome back! You earned ${format(offlineQuanta)} quanta while away for ${offlineHours} hours.`);
+  } else {
+    renderer.showNotification(loaded ? 'Game loaded.' : 'Welcome to Quantum Forge.');
+  }
 
   // Game loop
   setInterval(() => {

@@ -106,4 +106,32 @@ export class GameEngine {
       this.buyGenerator(target.id);
     }
   }
+
+  // --- Offline progress ---
+
+  calculateOfflineProgress(elapsedSeconds: number): void {
+    // Cap at 24 hours (86400 seconds)
+    const cappedSeconds = Math.min(elapsedSeconds, 86400);
+    const efficiency = 0.5; // 50% efficiency for offline
+
+    // Calculate resources earned per second
+    const resourcesPerSecond: Record<string, number> = {};
+    for (const resource of Object.keys(this.state.resources)) {
+      resourcesPerSecond[resource] = this.getResourceRate(resource);
+    }
+
+    // Add resources based on offline time
+    for (const resource of Object.keys(this.state.resources)) {
+      const earned = resourcesPerSecond[resource] * cappedSeconds * efficiency;
+      if (earned > 0) {
+        this.state.resources[resource] = (this.state.resources[resource] ?? 0) + earned;
+      }
+    }
+
+    // Increment total quanta produced
+    const quantaRate = this.getQuantaRate();
+    if (quantaRate > 0) {
+      this.state.totalQuantaProduced += quantaRate * cappedSeconds * efficiency;
+    }
+  }
 }
