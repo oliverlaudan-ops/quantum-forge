@@ -191,18 +191,21 @@ export class GameState {
     this.ascensionData.cosmicFragments += cfGain;
     this.ascensionData.ascensions += 1;
 
-    // Full reset including QE, TP, RP, skills, upgrades
-    // BUT keep ascensionData and preserve some skills based on keepSkills upgrade
-    const keptSkills = this.ascensionData.ascensionUpgrades.keepSkills;
+    // Save ascension data before full reset (reset(true) would wipe it)
+    const savedAscension = { ...this.ascensionData };
     const savedSkillOwned = { ...this.skillOwned };
+    const keptSkills = this.ascensionData.ascensionUpgrades.keepSkills;
+
     this.reset(true);
+
+    // Restore ascension progress (it persists across resets)
+    this.ascensionData = savedAscension;
 
     // Preserve some skills based on keepSkills upgrade
     if (keptSkills > 0) {
       const ownedSkillIds = Object.entries(savedSkillOwned)
         .filter(([, owned]) => owned)
         .map(([id]) => id);
-      // Randomly pick skills to keep
       const shuffled = ownedSkillIds.sort(() => Math.random() - 0.5);
       for (let i = 0; i < Math.min(keptSkills, shuffled.length); i++) {
         this.skillOwned[shuffled[i]] = true;
