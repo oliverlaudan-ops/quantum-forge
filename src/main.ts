@@ -24,7 +24,7 @@ function main() {
   }
 
   // Offline progress
-  let offlineHours = 0;
+  let offlineHours = '';
   if (loaded && state.save().savedAt) {
     const now = Date.now();
     const lastSave = state.save().savedAt;
@@ -83,9 +83,9 @@ function main() {
   });
 
   // Initial message
-  if (offlineHours > 0) {
+  if (offlineHours) {
     const quantaRate = engine.getQuantaRate();
-    const offlineQuanta = quantaRate * (parseFloat(offlineHours) * 3600) * 0.5;
+    const offlineQuanta = quantaRate * parseFloat(offlineHours) * 3600 * 0.5;
     renderer.showNotification(`Welcome back! You earned ${format(offlineQuanta)} quanta while away for ${offlineHours} hours.`);
   } else {
     renderer.showNotification(loaded ? 'Game loaded.' : 'Welcome to Quantum Forge.');
