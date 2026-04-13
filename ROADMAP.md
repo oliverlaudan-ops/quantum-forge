@@ -29,9 +29,9 @@
 ## 🎯 Future Ideas
 
 ### Deeper Gameplay
-- [ ] **Rebirth Layer** (3rd prestige) — Even deeper resets for cosmic power
-- [ ] **Evolution Tree** — Branching passive upgrades
-- [ ] **Targeted Auto-Buy** — Auto-buy specific generators
+- [ ] **🌀 Rebirth Layer** (3rd prestige) — Even deeper resets for cosmic power
+- [ ] **🧬 Evolution Tree** — Branching passive upgrades that unlock new paths
+- [ ] **🏗️ Automation Upgrades** — Auto-buy for specific generators
 - [ ] **Prestige Milestones** — Bonus unlocks at 1/5/25/100 transcensions
 - [ ] **Challenge Modes** — "No transcend until layer 5", "Only buy even generators"
 
